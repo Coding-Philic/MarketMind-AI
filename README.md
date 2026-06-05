@@ -2,7 +2,7 @@
 
 MarketMind AI is a memory-first investment intelligence dashboard that simulates a multi-agent research workflow for company events, hindsight analysis, and strategic memo generation.
 
-It combines a React + TypeScript frontend, an Express backend, and Gemini-powered AI routes to help you explore market events, audit historical expectations, and generate research briefs.
+It combines a React + TypeScript frontend, an Express backend, and live AI routes that now support NVIDIA AI as the primary engine with Gemini as a fallback. The current setup is designed to show real backend-generated AI responses in the terminal while preserving the existing simulation and memory graph experience.
 
 ## What this project does
 
@@ -12,7 +12,8 @@ MarketMind AI is designed to demonstrate how an AI-assisted research stack can:
 - run a four-agent reasoning cycle (monitor, analyst, consolidator, and revenue intelligence);
 - store and visualize hindsight lessons in a memory-style ledger;
 - generate investment memos and strategic notes;
-- fall back to deterministic simulator logic when no Gemini API key is available.
+- use live backend AI responses when an AI key is available;
+- fall back to deterministic simulator logic only when no live AI key is available.
 
 ## Main features
 
@@ -21,7 +22,7 @@ MarketMind AI is designed to demonstrate how an AI-assisted research stack can:
 - Hindsight ledger for tracking expectation deviations and lessons learned
 - Company evolution view for comparing forecasts and strategic shifts
 - Intel memos for research brief generation and memo review
-- Gemini-backed AI routes for live analysis and memo drafting
+- NVIDIA-backed AI routes for live analysis and memo drafting, with Gemini fallback
 
 ## Project structure
 
@@ -34,7 +35,7 @@ MarketMind AI is designed to demonstrate how an AI-assisted research stack can:
 
 - Frontend: React 19, TypeScript, Vite, Lucide icons
 - Backend: Express, CORS, dotenv
-- AI integration: Google Gemini API via the backend
+- AI integration: NVIDIA API via the backend (preferred), with Gemini fallback
 - Container support: Docker + Docker Compose
 
 ## Prerequisites
@@ -44,7 +45,7 @@ Before you start, make sure you have:
 - Node.js 18+ (the project is also aligned with Node 24 in Docker)
 - npm
 - Optional: Docker Desktop if you want to run the containerized setup
-- A Gemini API key if you want real AI analysis instead of fallback simulation
+- A NVIDIA API key (preferred) or a Gemini API key if you want real AI analysis instead of fallback simulation
 
 ## Quick start
 
@@ -82,15 +83,16 @@ npm --prefix backend start
 npm --prefix frontend run dev
 ```
 
-### 3) Configure Gemini (optional but recommended)
+### 3) Configure the live AI key
 
-Create a backend/.env file:
+Create or update backend/.env with one of the supported keys:
 
 ```env
-GEMINI_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_key_here
+NVIDIA_API_KEY=your_nvidia_key_here
 ```
 
-If the key is missing, the app will use simulator-style fallback logic.
+The backend currently prefers NVIDIA when `NVIDIA_API_KEY` is available. If neither key is set, the app uses the simulator fallback path.
 
 ## Production build
 
@@ -115,10 +117,13 @@ This exposes:
 - frontend at http://localhost:3000
 - backend at http://localhost:3001
 
-Set your Gemini key in your shell before running Docker:
+Set your AI key in your shell before running Docker:
 
 ```bash
-export GEMINI_API_KEY=your_api_key_here
+export NVIDIA_API_KEY=your_nvidia_key_here
+# or
+export GEMINI_API_KEY=your_gemini_key_here
+
 docker compose up --build
 ```
 
@@ -131,14 +136,14 @@ docker compose up --build
    - Hindsight Analyst Agent compares the event to company expectations
    - Memory Consolidator Agent updates the graph and ledger
    - Revenue Intelligence Agent writes an investment memo
-4. If Gemini is configured, the backend generates live analysis and memo content.
-5. If Gemini is unavailable, the app falls back to deterministic local logic.
+4. If an AI key is configured, the backend generates live analysis and memo content through the NVIDIA/Gemini engine path.
+5. If no AI key is configured, the app falls back to deterministic local logic.
 
 ## Backend API overview
 
 The backend exposes these routes:
 
-- GET /api/config — checks whether a Gemini key is configured
+- GET /api/config — checks whether a live AI key is configured on the backend
 - POST /api/hindsight — returns a deviation label and hindsight lesson
 - POST /api/memo — returns a recommendation, conviction score, and memo text
 
@@ -157,7 +162,7 @@ npm --prefix frontend run dev
 When you run the app with `npm start`, the terminal will now show:
 
 - backend request logs for `/api/config`, `/api/hindsight`, and `/api/memo`
-- Gemini AI response text and parsed recommendations from the backend
+- live AI response text and parsed recommendations from the backend
 - frontend button action logs for the main UI controls, such as:
   - Inject Market Event — runs a random preset market event
   - Inject Custom Event — sends your custom event into the analysis pipeline
@@ -176,7 +181,7 @@ For the full production vision and roadmap, see:
 ## Notes
 
 - The current UI uses mock data and simulation logic for demonstration purposes.
-- Real AI generation depends on Gemini credentials being available to the backend.
+- Real AI generation depends on NVIDIA or Gemini credentials being available to the backend.
 - The build was verified with the current project scripts after the TypeScript fixes applied in the frontend.
 
 ## Next steps
