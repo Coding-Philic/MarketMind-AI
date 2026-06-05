@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: marketmind-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: marketmind-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always
