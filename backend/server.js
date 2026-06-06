@@ -15,30 +15,170 @@ function logBackendEvent(label, details) {
   console.log(`[Backend ${label}]`, details);
 }
 
+const memoContextSummaryCache = new Map();
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 60000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  }catch (err) {
+  console.error(
+    "Fetch Failed:",
+    err.name,
+    err.message
+  );
+  throw err;
+} finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function normalizeText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function generateFallbackMemo({ companyName, ticker, eventTitle, eventContent, lessonsList, condensedContext }) {
+  const recommendation = 'HOLD';
+  const convictionScore = 5;
+  const lessons = lessonsList.length > 0 ? lessonsList.slice(0, 3).map(l => `- ${l}`).join('\n') : '- No prior lesson history available.';
+
+  return `SUMMARY: ${recommendation} | ${convictionScore}
+
+### Executive Summary
+A fast fallback memo was generated for ${companyName} (${ticker}) because the live AI model did not return within the response window. The current trigger event, "${eventTitle}", suggests the market is reacting to ${normalizeText(eventContent)}.
+
+### Strategic Moat Evaluation
+The strategic assessment is based on the current event signal, the condensed context summary, and the latest recorded hindsight lessons. The summary context available for this cycle was: ${normalizeText(condensedContext || 'Limited context available.')}
+
+### Integrated Hindsight Lessons
+${lessons}
+
+### Growth Outlook
+Near-term momentum is directionally positive but should be monitored against execution risk, timeline discipline, and market reaction quality.
+
+### Core Risk Parameters
+1. AI response latency can delay full narrative generation.
+2. Historical lessons should continue to guide execution expectations.
+3. Market conditions may shift quickly around the current event.
+`;
+}
+
+function buildContextSummaryKey({ companyName, ticker, eventTitle, eventContent, lessons = [], memoryContext = '', userPrompt = '' }) {
+  return JSON.stringify({
+    companyName: normalizeText(companyName),
+    ticker: normalizeText(ticker),
+    eventTitle: normalizeText(eventTitle),
+    eventContent: normalizeText(eventContent),
+    lessons: Array.isArray(lessons) ? lessons.map(normalizeText) : [],
+    memoryContext: normalizeText(memoryContext),
+    userPrompt: normalizeText(userPrompt)
+  });
+}
+
+async function summarizeContext(contextText, customApiKey) {
+  const trimmed = normalizeText(contextText);
+  if (!trimmed) return '';
+  if (trimmed.length < 1600) return trimmed;
+
+  const cacheKey = `summary:${trimmed.slice(0, 180)}:${trimmed.length}`;
+  if (memoContextSummaryCache.has(cacheKey)) {
+    return memoContextSummaryCache.get(cacheKey);
+  }
+
+  const summaryPrompt = `You are a compact research summarizer for MarketMind AI.
+Summarize the following company/event context into 6-8 concise bullet points that preserve the most relevant strategic, risk, and execution signals. Do not invent facts.
+
+CONTEXT:
+${trimmed}`;
+
+  try {
+    const summary = await queryAI(summaryPrompt, customApiKey, { maxTokens: 1200 });
+    const condensed = normalizeText(summary);
+    memoContextSummaryCache.set(cacheKey, condensed);
+    return condensed;
+  } catch (error) {
+    console.warn('[Backend Summary] Falling back to truncated context due to summary error:', error.message || error);
+    return trimmed.slice(0, 1800);
+  }
+}
+
 // helper function to query NVIDIA API using the provided model
-async function queryNvidia(prompt, customApiKey) {
+async function queryNvidia(prompt, customApiKey, options = {}) {
   const apiKey = customApiKey || process.env.NVIDIA_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
     throw new Error('NVIDIA API Key is not configured. Set NVIDIA_API_KEY in backend/.env.');
   }
+console.log("Using NVIDIA model:", "google/gemma-4-31b-it");
+console.log("Prompt length:", prompt.length);
+console.log("API key exists:", !!apiKey);
+console.log("Starting NVIDIA request...");
 
-  const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'google/gemma-4-31b-it',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 16384,
-      temperature: 1.0,
-      top_p: 0.95,
-      stream: false,
-      chat_template_kwargs: { enable_thinking: true }
-    })
-  });
+ try {
+  const response = await fetchWithTimeout(
+    'https://integrate.api.nvidia.com/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'google/gemma-4-31b-it',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: Math.min(options.maxTokens || 1024, 2048),
+        temperature: 0.3,
+        top_p: 0.9,
+        stream: false,
+        chat_template_kwargs: { enable_thinking: false }
+      })
+    }
+  );
+
+  console.log("NVIDIA Status:", response.status);
+
+  if (!response.ok) {
+    const errorJson = await response.json().catch(() => ({}));
+    const message =
+      errorJson?.error?.message ||
+      `HTTP ${response.status} Error`;
+
+    throw new Error(
+      `NVIDIA API Request Failed: ${message}`
+    );
+  }
+
+  const data = await response.json();
+
+  const text =
+    data?.choices?.[0]?.message?.content;
+
+  if (!text) {
+    throw new Error(
+      "NVIDIA API returned empty content"
+    );
+  }
+
+  return text.trim();
+
+} catch (err) {
+  console.error(
+    "NVIDIA Error Name:",
+    err.name
+  );
+
+  console.error(
+    "NVIDIA Error Message:",
+    err.message
+  );
+
+  throw err;
+}
 
   if (!response.ok) {
     const errorJson = await response.json().catch(() => ({}));
@@ -57,7 +197,7 @@ async function queryNvidia(prompt, customApiKey) {
 }
 
 // fallback helper for Gemini if NVIDIA key is unavailable
-async function queryGemini(prompt, customApiKey) {
+async function queryGemini(prompt, customApiKey, options = {}) {
   const apiKey = customApiKey || process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
     throw new Error('No AI API Key is configured. Set NVIDIA_API_KEY or GEMINI_API_KEY in backend/.env.');
@@ -65,7 +205,7 @@ async function queryGemini(prompt, customApiKey) {
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -80,7 +220,7 @@ async function queryGemini(prompt, customApiKey) {
       ],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1000
+        maxOutputTokens: options.maxTokens || 1500
       }
     })
   });
@@ -101,17 +241,31 @@ async function queryGemini(prompt, customApiKey) {
   return text.trim();
 }
 
-async function queryAI(prompt, customApiKey) {
+async function queryAI(prompt, customApiKey, options = {}) {
   const nvidiaKey = customApiKey || process.env.NVIDIA_API_KEY;
-  if (nvidiaKey && nvidiaKey.trim().length > 0) {
-    logBackendEvent('AI Engine', { engine: 'nvidia', source: 'backend' });
-    return queryNvidia(prompt, nvidiaKey);
+  const geminiKey = customApiKey || process.env.GEMINI_API_KEY;
+
+  if (geminiKey && geminiKey.trim().length > 0) {
+    try {
+      logBackendEvent('AI Engine', { engine: 'gemini', source: 'backend' });
+      return await queryGemini(prompt, geminiKey, options);
+    }  catch (error) {
+  if (!nvidiaKey || nvidiaKey.trim().length === 0) {
+    throw error;
   }
 
-  const geminiKey = customApiKey || process.env.GEMINI_API_KEY;
-  if (geminiKey && geminiKey.trim().length > 0) {
-    logBackendEvent('AI Engine', { engine: 'gemini', source: 'backend' });
-    return queryGemini(prompt, geminiKey);
+  logBackendEvent('AI Engine Fallback', {
+    from: 'gemini',
+    to: 'nvidia',
+    reason: error.message || String(error),
+    source: 'backend'
+  });
+}
+  }
+
+  if (nvidiaKey && nvidiaKey.trim().length > 0) {
+    logBackendEvent('AI Engine', { engine: 'nvidia', source: 'backend' });
+    return queryNvidia(prompt, nvidiaKey, options);
   }
 
   throw new Error('No AI API Key is configured. Set NVIDIA_API_KEY or GEMINI_API_KEY in backend/.env.');
@@ -193,7 +347,7 @@ Advanced multi-die packaging transitions carry high assembly friction that stand
 
 // 3. Investment brief compiler route
 app.post('/api/memo', async (req, res) => {
-  const { companyName, ticker, eventTitle, eventContent, lessons, apiKey } = req.body;
+  const { companyName, ticker, eventTitle, eventContent, lessons, companyInfo, historicalEvents, memoryContext, userPrompt, apiKey } = req.body;
   const clientApiKey = req.headers['x-api-key'] || apiKey;
   logBackendEvent('Request /api/memo', { companyName, ticker, eventTitle, lessonCount: Array.isArray(lessons) ? lessons.length : 0, hasClientApiKey: Boolean(clientApiKey) });
 
@@ -204,13 +358,32 @@ app.post('/api/memo', async (req, res) => {
   const lessonsList = Array.isArray(lessons) ? lessons : [];
   const lessonsString = lessonsList.map(l => `- ${l}`).join('\n');
 
+  const longContext = [
+    companyInfo ? `Company Info:\n${companyInfo}` : '',
+    historicalEvents ? `Historical Events:\n${historicalEvents}` : '',
+    lessonsString ? `Lessons:\n${lessonsString}` : '',
+    memoryContext ? `Memory Context:\n${memoryContext}` : '',
+    `User Prompt:\n${userPrompt || 'Generate a concise strategic memo for the current event.'}`,
+    `Recent Trigger Event:\n${eventTitle} - ${eventContent}`
+  ].filter(Boolean).join('\n\n');
+
+  console.log("Long Context Length:", longContext.length);
+  const condensedContext = await summarizeContext(longContext, clientApiKey);
+  console.log(
+  "Condensed Context Length:",
+  condensedContext?.length || 0
+);
+
   const prompt = `
 You are the Revenue Intelligence Agent for MarketMind AI. Write an institutional-grade, publication-quality investment research memo in Markdown.
 
+Use the condensed research context below and keep the memo concise and practical.
+
+Condensed Context Summary:
+${condensedContext || 'No additional summary available; use the recent event details directly.'}
+
 Company: ${companyName} (${ticker})
 Recent Trigger Event: ${eventTitle} - ${eventContent}
-Historical Hindsight Lessons Learned for this Company:
-${lessonsString || '- No previous expectation deviations recorded.'}
 
 Your memo should be structured with the following exact Markdown headers:
 ### Executive Summary
@@ -228,9 +401,16 @@ Followed by empty line, and then the Markdown memo content.
 `;
 
   try {
-    const responseText = await queryAI(prompt, clientApiKey);
+    console.log("Memo Prompt Length:", prompt.length);
+    const responseText = await Promise.race([
+      queryAI(prompt, clientApiKey, { maxTokens: 2500 }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('AI memo generation timed out after 60 seconds.')), 60000))
+    ]).catch(error => {
+      logBackendEvent('AI Fallback', { companyName, reason: error.message || String(error), source: 'backend' });
+      return generateFallbackMemo({ companyName, ticker, eventTitle, eventContent, lessonsList, condensedContext });
+    });
 
-    const lines = responseText.split('\n');
+    const lines = String(responseText).split('\n');
     const summaryLine = lines.find(l => l.toUpperCase().startsWith('SUMMARY:'));
 
     let recommendation = 'HOLD';

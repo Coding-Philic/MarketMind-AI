@@ -20,19 +20,49 @@ interface MemoResponse {
   error?: string;
 }
 
+const BACKEND_CONFIG_CACHE_KEY = 'mm_backend_config_cache';
+const BACKEND_CONFIG_TTL_MS = 60_000;
+let backendConfigPromise: Promise<boolean> | null = null;
+
 /**
  * Checks if the backend has a Gemini API key configured in its .env file.
  */
-export async function checkBackendConfig(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/config');
-    if (!response.ok) return false;
-    const data: ConfigResponse = await response.json();
-    return data.hasApiKey;
-  } catch (error) {
-    console.error('Failed to contact backend config route: ', error);
-    return false;
+export async function checkBackendConfig(forceRefresh = false): Promise<boolean> {
+  if (!forceRefresh && backendConfigPromise) {
+    return backendConfigPromise;
   }
+
+  const cached = !forceRefresh ? localStorage.getItem(BACKEND_CONFIG_CACHE_KEY) : null;
+  if (!forceRefresh && cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < BACKEND_CONFIG_TTL_MS) {
+        return Boolean(parsed.hasApiKey);
+      }
+    } catch {
+      localStorage.removeItem(BACKEND_CONFIG_CACHE_KEY);
+    }
+  }
+
+  backendConfigPromise = (async () => {
+    try {
+      const response = await fetch('/api/config');
+      if (!response.ok) return false;
+      const data: ConfigResponse = await response.json();
+      localStorage.setItem(BACKEND_CONFIG_CACHE_KEY, JSON.stringify({
+        hasApiKey: Boolean(data.hasApiKey),
+        timestamp: Date.now()
+      }));
+      return Boolean(data.hasApiKey);
+    } catch (error) {
+      console.error('Failed to contact backend config route: ', error);
+      return false;
+    } finally {
+      backendConfigPromise = null;
+    }
+  })();
+
+  return backendConfigPromise;
 }
 
 /**
