@@ -7,7 +7,9 @@ import {
   TrendingUp, 
   FileText, 
   HelpCircle,
-  Cpu
+  Cpu,
+  Search,
+  Database
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -16,6 +18,7 @@ interface SidebarProps {
   memoCount: number;
   ledgerCount: number;
   isLiveAi: boolean;
+  hasDatabase: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -23,10 +26,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab, 
   memoCount, 
   ledgerCount,
-  isLiveAi
+  isLiveAi,
+  hasDatabase
 }) => {
   const navItems = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+    { id: 'search', name: 'Company Research', icon: Search },
     { id: 'network', name: 'Memory Network', icon: Network },
     { id: 'ledger', name: 'Hindsight Ledger', icon: History, count: ledgerCount },
     { id: 'evolution', name: 'Company Evolution', icon: TrendingUp },
@@ -82,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* API Key Connection Status */}
+      {/* AI Engine Status */}
       <div style={styles.apiCard} className="glass-panel">
         <div style={styles.apiHeader}>
           <Cpu size={14} color={isLiveAi ? '#10b981' : '#f59e0b'} />
@@ -93,13 +98,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
             textTransform: 'uppercase',
             letterSpacing: '0.02em'
           }}>
-            {isLiveAi ? 'Live Gemini Model' : 'Simulator Fallback'}
+            {isLiveAi ? 'Groq AI Active' : 'AI Not Configured'}
           </span>
         </div>
         <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', lineHeight: '1.3' }}>
           {isLiveAi 
-            ? 'Key configured in server .env. Executing real-time AI agents.' 
-            : 'No .env key found. Simulating rule-based fallback cycles.'
+            ? 'Groq API configured. Running live AI analysis with gpt-oss-120b.' 
+            : 'No API key found. Add GROQ_API_KEY to backend/.env.'
+          }
+        </p>
+      </div>
+
+      {/* Database Status */}
+      <div style={styles.apiCard} className="glass-panel">
+        <div style={styles.apiHeader}>
+          <Database size={14} color={hasDatabase ? '#10b981' : '#64748b'} />
+          <span style={{ 
+            fontSize: '0.72rem', 
+            fontWeight: 700, 
+            color: hasDatabase ? '#10b981' : '#64748b',
+            textTransform: 'uppercase',
+            letterSpacing: '0.02em'
+          }}>
+            {hasDatabase ? 'Supabase Connected' : 'Local Mode'}
+          </span>
+        </div>
+        <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', lineHeight: '1.3' }}>
+          {hasDatabase 
+            ? 'Cloud database active. Data syncs in real-time across all users.' 
+            : 'Using local fallback data. Connect Supabase for cloud sync.'
           }
         </p>
       </div>
@@ -110,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <HelpCircle size={14} color="#94a3b8" style={{ marginRight: 6 }} />
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Memory-First AI</span>
         </div>
-        <p style={styles.version}>v1.2.0 (Active)</p>
+        <p style={styles.version}>v2.0.0 (Cloud)</p>
       </div>
     </aside>
   );
@@ -198,7 +225,7 @@ const styles = {
   },
   apiCard: {
     padding: '12px',
-    marginBottom: '16px',
+    marginBottom: '10px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '6px',

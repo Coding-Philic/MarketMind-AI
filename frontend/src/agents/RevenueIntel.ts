@@ -1,5 +1,5 @@
 import { Company, HindsightRecord, InvestmentMemo, AgentLog, MarketEvent } from '../types';
-import { checkBackendConfig, generateLiveMemo } from '../utils/gemini';
+import { checkBackendConfig, generateLiveMemo } from '../utils/api';
 
 export class RevenueIntel {
   public name = 'Revenue Intelligence Agent';
@@ -78,10 +78,11 @@ export class RevenueIntel {
       let convictionScore = 6;
       let fullMemo = '';
 
-      const hasBackendAi = apiKey || await checkBackendConfig();
+      const backendConfig = await checkBackendConfig();
+      const hasBackendAi = apiKey || backendConfig.hasApiKey;
       if (hasBackendAi) {
         logs.push({
-          message: `[Live AI Mode] Requesting Gemini-2.5-Flash model to draft strategist memo...`,
+          message: `[Live AI Mode] Requesting Groq AI to draft strategist memo...`,
           type: 'process'
         });
 
@@ -99,12 +100,12 @@ export class RevenueIntel {
           fullMemo = geminiResult.fullMemo;
 
           logs.push({
-            message: `[Live AI Mode] Memo drafted by Gemini. Rating: ${recommendation} (Score: ${convictionScore}/10).`,
+            message: `[Live AI Mode] Memo drafted by Groq AI. Rating: ${recommendation} (Score: ${convictionScore}/10).`,
             type: 'success'
           });
         } catch (error: any) {
           logs.push({
-            message: `[Fallback Mode] Gemini API failed: ${error.message || error}. Using local template engine.`,
+            message: `[Fallback Mode] AI API failed: ${error.message || error}. Using local template engine.`,
             type: 'warn'
           });
           const localFallback = this.compileLocalMemo(company, event, newAlignmentScore, companyLessons, updatedCompany);

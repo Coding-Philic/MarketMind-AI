@@ -1,5 +1,5 @@
 import { MarketEvent, HindsightRecord, Company, AgentLog } from '../types';
-import { checkBackendConfig, generateLiveHindsight } from '../utils/gemini';
+import { checkBackendConfig, generateLiveHindsight } from '../utils/api';
 
 export class HindsightAnalyst {
   public name = 'Hindsight Analyst Agent';
@@ -46,10 +46,11 @@ export class HindsightAnalyst {
       let severity: HindsightRecord['severity'] = 'minor';
 
       // 1. Live AI Mode via backend (preferred)
-      const hasBackendAi = apiKey || await checkBackendConfig();
+      const backendConfig = await checkBackendConfig();
+      const hasBackendAi = apiKey || backendConfig.hasApiKey;
       if (hasBackendAi) {
         logs.push({
-          message: `[Live AI Mode] Contacting Gemini-2.5-Flash model to audit target deviation context...`,
+          message: `[Live AI Mode] Contacting Groq AI to audit target deviation context...`,
           type: 'process'
         });
 
@@ -66,12 +67,12 @@ export class HindsightAnalyst {
                      (deviationValue === 'lagging') ? 'moderate' : 'minor';
 
           logs.push({
-            message: `[Live AI Mode] Gemini evaluation complete. Audit: [${deviationValue.toUpperCase()}].`,
+            message: `[Live AI Mode] Groq AI evaluation complete. Audit: [${deviationValue.toUpperCase()}].`,
             type: 'success'
           });
         } catch (error: any) {
           logs.push({
-            message: `[Fallback Mode] Gemini API failed: ${error.message || error}. Reverting to local rule-based models.`,
+            message: `[Fallback Mode] AI API failed: ${error.message || error}. Reverting to local rule-based models.`,
             type: 'warn'
           });
           // Call local rule generator below
