@@ -11,6 +11,146 @@ import {
 import { InvestmentMemo } from '../types';
 import confetti from 'canvas-confetti';
 
+// ---------------------------------------------------------------------------
+// Rich Memo Renderer — Full markdown-to-HTML parser for investment memos
+// ---------------------------------------------------------------------------
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  // Handle bold+italic ***text***, bold **text**, italic *text*
+  const parts = text.split(/(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (/^\*\*\*(.+)\*\*\*$/.test(part)) {
+      return <strong key={i} style={{ color: '#fff', fontStyle: 'italic' }}>{part.slice(3, -3)}</strong>;
+    }
+    if (/^\*\*(.+)\*\*$/.test(part)) {
+      return <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+    }
+    if (/^\*(.+)\*$/.test(part)) {
+      return <em key={i} style={{ color: '#cbd5e1' }}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+const mdStyles: Record<string, React.CSSProperties> = {
+  h2: { fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', marginTop: '28px', marginBottom: '12px', paddingBottom: '6px', borderBottom: '2px solid rgba(99,102,241,0.35)', background: 'linear-gradient(90deg,#6366f1,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  h3: { fontSize: '1rem', fontWeight: 700, color: '#e2e8f0', marginTop: '22px', marginBottom: '10px', paddingBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.06)' },
+  h4: { fontSize: '0.9rem', fontWeight: 700, color: '#cbd5e1', marginTop: '16px', marginBottom: '8px' },
+  p: { fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.65', marginBottom: '12px' },
+  hr: { border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', margin: '20px 0' },
+  ul: { paddingLeft: '20px', marginBottom: '14px' },
+  ol: { paddingLeft: '20px', marginBottom: '14px' },
+  li: { fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.6', marginBottom: '5px', listStyleType: 'square' },
+  olLi: { fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.6', marginBottom: '5px', listStyleType: 'decimal' },
+  table: { width: '100%', borderCollapse: 'collapse' as const, marginBottom: '18px', fontSize: '0.82rem' },
+  th: { background: 'rgba(99,102,241,0.15)', color: '#e2e8f0', fontWeight: 700, padding: '8px 12px', textAlign: 'left' as const, borderBottom: '2px solid rgba(99,102,241,0.3)' },
+  tdEven: { padding: '7px 12px', color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)', verticalAlign: 'top' as const },
+  tdOdd: { padding: '7px 12px', color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'transparent', verticalAlign: 'top' as const },
+  blockquote: { borderLeft: '3px solid rgba(99,102,241,0.5)', paddingLeft: '14px', margin: '14px 0', color: '#64748b', fontSize: '0.85rem', fontStyle: 'italic' },
+};
+
+function parseTableLine(line: string): string[] {
+  return line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+}
+
+const RichMemoRenderer: React.FC<{ content: string }> = ({ content }) => {
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      elements.push(<hr key={i} style={mdStyles.hr} />);
+      i++; continue;
+    }
+    // H2
+    if (line.startsWith('## ')) {
+      elements.push(<h2 key={i} style={mdStyles.h2}>{line.slice(3)}</h2>);
+      i++; continue;
+    }
+    // H3
+    if (line.startsWith('### ')) {
+      elements.push(<h3 key={i} style={mdStyles.h3}>{renderInlineMarkdown(line.slice(4))}</h3>);
+      i++; continue;
+    }
+    // H4
+    if (line.startsWith('#### ')) {
+      elements.push(<h4 key={i} style={mdStyles.h4}>{renderInlineMarkdown(line.slice(5))}</h4>);
+      i++; continue;
+    }
+    // Blockquote
+    if (line.startsWith('> ')) {
+      elements.push(<blockquote key={i} style={mdStyles.blockquote}>{renderInlineMarkdown(line.slice(2))}</blockquote>);
+      i++; continue;
+    }
+    // Unordered list block
+    if (/^[-*+]\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*+]\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-*+]\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${i}`} style={mdStyles.ul}>
+          {items.map((item, idx) => <li key={idx} style={mdStyles.li}>{renderInlineMarkdown(item)}</li>)}
+        </ul>
+      );
+      continue;
+    }
+    // Ordered list block
+    if (/^\d+\.\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${i}`} style={mdStyles.ol}>
+          {items.map((item, idx) => <li key={idx} style={mdStyles.olLi}>{renderInlineMarkdown(item)}</li>)}
+        </ol>
+      );
+      continue;
+    }
+    // Table detection: line starts with |
+    if (line.startsWith('|') && i + 1 < lines.length && /^\|[\s\-|]+\|$/.test(lines[i + 1])) {
+      const headers = parseTableLine(line);
+      i += 2; // skip header + separator
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].startsWith('|')) {
+        rows.push(parseTableLine(lines[i]));
+        i++;
+      }
+      elements.push(
+        <div key={`table-${i}`} style={{ overflowX: 'auto', marginBottom: '18px', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <table style={mdStyles.table}>
+            <thead>
+              <tr>{headers.map((h, hi) => <th key={hi} style={mdStyles.th}>{renderInlineMarkdown(h)}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => <td key={ci} style={ri % 2 === 0 ? mdStyles.tdEven : mdStyles.tdOdd}>{renderInlineMarkdown(cell)}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+    // Empty line — skip
+    if (line.trim() === '') { i++; continue; }
+    // Default: paragraph
+    elements.push(<p key={i} style={mdStyles.p}>{renderInlineMarkdown(line)}</p>);
+    i++;
+  }
+
+  return <>{elements}</>;
+};
+
+
 interface IntelHubViewProps {
   memos: InvestmentMemo[];
   onUpdateMemo: (memoId: string, updatedMemo: InvestmentMemo) => void;
@@ -208,32 +348,7 @@ export const IntelHubView: React.FC<IntelHubViewProps> = ({ memos, onUpdateMemo 
                 />
               ) : (
                 <div style={styles.markdownContent}>
-                  {activeMemo.fullMemo.split('\n\n').map((paragraph, index) => {
-                    if (paragraph.startsWith('### ')) {
-                      return <h3 key={index} style={styles.mdHeader3}>{paragraph.replace('### ', '')}</h3>;
-                    }
-                    if (paragraph.startsWith('1. ') || paragraph.startsWith('* ')) {
-                      return (
-                        <ul key={index} style={styles.mdList}>
-                          {paragraph.split('\n').map((li, lIdx) => (
-                            <li key={lIdx} style={styles.mdListItem}>
-                              {/* Bold inline logic */}
-                              {li.includes('**') ? (
-                                <span>
-                                  {li.replace(/^\d+\.\s+|^\*\s+/, '').split('**').map((part, pIdx) => 
-                                    pIdx % 2 === 1 ? <strong key={pIdx} style={{ color: '#ffffff' }}>{part}</strong> : part
-                                  )}
-                                </span>
-                              ) : (
-                                li.replace(/^\d+\.\s+|^\*\s+/, '')
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    }
-                    return <p key={index} style={styles.mdParagraph}>{paragraph}</p>;
-                  })}
+                  <RichMemoRenderer content={activeMemo.fullMemo} />
                 </div>
               )}
             </div>

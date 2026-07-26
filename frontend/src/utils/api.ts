@@ -7,26 +7,49 @@ import type {
   Company, HindsightRecord, MarketEvent,
   MemoryNode, MemoryEdge, InvestmentMemo
 } from '../types';
+import { supabase } from './supabase';
 
 function getApiUrl(): string {
   return import.meta.env.VITE_API_URL || '';
 }
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function apiFetch<T>(path: string, options: RequestInit = {}, retries = 1): Promise<T> {
   const baseUrl = getApiUrl();
   const url = `${baseUrl}${path}`;
 
+  let token = '';
+  if (supabase) {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || '';
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Supabase-Anon-Key'] = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    }
+    headers
   });
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.error || `API Error: ${response.status}`);
+    const errMsg = errData.error?.message || errData.error || `API Error: ${response.status}`;
+    
+    // Workaround for Supabase Auth clock skew (JWT issued at future)
+    if (retries > 0 && typeof errMsg === 'string' && errMsg.includes('JWT issued at future')) {
+      console.warn('Clock skew detected with Supabase Auth token, retrying in 1.5s...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return apiFetch<T>(path, options, retries - 1);
+    }
+    
+    throw new Error(errMsg);
   }
 
   return response.json();
@@ -138,6 +161,21 @@ export async function saveMemo(memo: InvestmentMemo): Promise<{ success: boolean
 }
 
 // ---------------------------------------------------------------------------
+// User Profile (Personalization)
+// ---------------------------------------------------------------------------
+
+export async function fetchUserProfile(): Promise<UserProfile | null> {
+  return apiFetch<UserProfile | null>('/api/profile').catch(() => null);
+}
+
+export async function saveUserProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
+  return apiFetch<UserProfile>('/api/profile', {
+    method: 'POST',
+    body: JSON.stringify(profile)
+  });
+}
+
+// ---------------------------------------------------------------------------
 // AI — Hindsight Analysis
 // ---------------------------------------------------------------------------
 
@@ -149,11 +187,12 @@ interface HindsightAIResponse {
 export async function generateLiveHindsight(
   companyName: string,
   expectation: string,
-  outcome: string
+  outcome: string,
+  userProfile?: UserProfile | null
 ): Promise<HindsightAIResponse> {
   return apiFetch<HindsightAIResponse>('/api/hindsight', {
     method: 'POST',
-    body: JSON.stringify({ companyName, expectation, outcome })
+    body: JSON.stringify({ companyName, expectation, outcome, userProfile })
   });
 }
 
@@ -172,11 +211,13 @@ export async function generateLiveMemo(
   ticker: string,
   eventTitle: string,
   eventContent: string,
-  lessons: string[]
+  lessons: string[],
+  companyInfo?: string,
+  userProfile?: UserProfile | null
 ): Promise<MemoAIResponse> {
   return apiFetch<MemoAIResponse>('/api/memo', {
     method: 'POST',
-    body: JSON.stringify({ companyName, ticker, eventTitle, eventContent, lessons })
+    body: JSON.stringify({ companyName, ticker, eventTitle, eventContent, lessons, companyInfo, userProfile })
   });
 }
 
@@ -189,7 +230,7 @@ export interface CompanyResearchResult {
   company: Company & {
     geopoliticalRisks?: string;
     competitorDependencies?: string;
-    keyInsights?: string;
+    keyInsights?: string[];
   };
   searchSources: Array<{
     title: string;
@@ -198,10 +239,10 @@ export interface CompanyResearchResult {
   }>;
 }
 
-export async function researchCompany(query: string): Promise<CompanyResearchResult> {
+export async function researchCompany(query: string, userProfile?: UserProfile | null): Promise<CompanyResearchResult> {
   return apiFetch<CompanyResearchResult>('/api/company-research', {
     method: 'POST',
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ query, userProfile })
   });
 }
 

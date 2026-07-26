@@ -9,7 +9,7 @@ import {
   Server,
   Info
 } from 'lucide-react';
-import { Company, MarketEvent, AgentState, AgentLog } from '../types';
+import { Company, MarketEvent, AgentState, AgentLog, UserProfile } from '../types';
 import { simulationEventPool } from '../data/mockData';
 
 interface DashboardProps {
@@ -20,6 +20,7 @@ interface DashboardProps {
   triggerEventProcessing: (event: MarketEvent) => void;
   isSimulating: boolean;
   setIsSimulating: (sim: boolean) => void;
+  userProfile?: UserProfile | null;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -29,10 +30,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   ledgerCount,
   triggerEventProcessing,
   isSimulating,
-  setIsSimulating
+  setIsSimulating,
+  userProfile
 }) => {
   // Manual custom event inputs
-  const [selectedCompanyId, setSelectedCompanyId] = useState('nvda');
+  const [selectedCompanyId, setSelectedCompanyId] = useState(companies.length > 0 ? companies[0].id : '');
   const [customTitle, setCustomTitle] = useState('');
   const [customContent, setCustomContent] = useState('');
   const [customImpact, setCustomImpact] = useState<'positive' | 'negative' | 'neutral'>('positive');
@@ -69,25 +71,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const activeLogs = getAggregatedLogs();
 
+  // Compute stats
+  const avgAlignment = companies.length > 0 
+    ? Math.round(companies.reduce((sum, c) => sum + (c.alignmentScore || 0), 0) / companies.length)
+    : 0;
+
   // Handle Injecting Preset Event
   const injectPreset = () => {
-    if (isSimulating) return; // Prevent multiple overlapping simulation runs
+    if (isSimulating || companies.length === 0) return; // Prevent multiple overlapping simulation runs
     console.log('[UI] Button action: Inject Market Event (preset)');
-    const randomIndex = Math.floor(Math.random() * simulationEventPool.length);
-    const preset = simulationEventPool[randomIndex];
-    const company = companies.find(c => c.id === preset.companyId);
+    
+    // Pick a random company from the user's DB
+    const randomCompany = companies[Math.floor(Math.random() * companies.length)];
+    
+    const sampleEvents = [
+      { title: 'Earnings Call Beat', impact: 'positive' as const, metric: 'revenue' as const, change: 12 },
+      { title: 'Supply Chain Disruption', impact: 'negative' as const, metric: 'margin' as const, change: -8 },
+      { title: 'New Product Launch', impact: 'positive' as const, metric: 'marketShare' as const, change: 15 },
+      { title: 'Regulatory Headwind', impact: 'negative' as const, metric: 'regulatory' as const, change: -10 }
+    ];
+    
+    const randomEvent = sampleEvents[Math.floor(Math.random() * sampleEvents.length)];
 
     const event: MarketEvent = {
       id: `e-gen-${Date.now()}`,
       timestamp: 'Just now',
-      companyId: preset.companyId,
-      companyName: company?.name || preset.companyName,
-      title: preset.title,
-      content: preset.content,
-      impactType: preset.impactType,
-      metricImpacted: preset.metricImpacted,
-      valueChange: preset.valueChange,
-      rawSource: preset.rawSource
+      companyId: randomCompany.id,
+      companyName: randomCompany.name,
+      title: randomEvent.title,
+      content: `Simulated event: ${randomEvent.title} impacting ${randomCompany.name}`,
+      impactType: randomEvent.impact,
+      metricImpacted: randomEvent.metric,
+      valueChange: randomEvent.change,
+      rawSource: 'Simulation Engine'
     };
 
     triggerEventProcessing(event);
@@ -121,22 +137,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setCustomContent('');
   };
 
-  // Compute stats
-  const avgAlignment = Math.round(
-    companies.reduce((sum, c) => sum + c.alignmentScore, 0) / companies.length
-  );
-
   return (
     <div>
+      {userProfile && (
+        <div style={{ padding: '16px', backgroundColor: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#f1f5f9' }}>Your Personal Bubble is Active</h2>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
+              MarketMind AI is filtering analysis for <span style={{ color: '#6366f1', fontWeight: 600 }}>{userProfile.investmentStyle || 'Standard'}</span> investments in <span style={{ color: '#6366f1', fontWeight: 600 }}>{userProfile.preferredIndustries?.join(', ') || 'All Sectors'}</span>.
+            </p>
+          </div>
+          <Info size={24} color="#6366f1" />
+        </div>
+      )}
       {/* Top Title and Global Simulation Bar */}
       <div className="top-nav">
         <h1 className="page-title">MarketMind AI Dashboard</h1>
         <div className="system-status">
           <button
             onClick={injectPreset}
-            disabled={isSimulating}
+            disabled={isSimulating || companies.length === 0}
             className="btn btn-primary"
-            style={{ opacity: isSimulating ? 0.6 : 1, cursor: isSimulating ? 'not-allowed' : 'pointer' }}
+            style={{ opacity: (isSimulating || companies.length === 0) ? 0.6 : 1, cursor: (isSimulating || companies.length === 0) ? 'not-allowed' : 'pointer' }}
           >
             <Play size={16} />
             {isSimulating ? 'Agent Reasoning Active...' : 'Inject Market Event'}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { supabase } from '../utils/supabase';
 import { 
   Brain, 
   LayoutDashboard, 
@@ -9,7 +10,9 @@ import {
   HelpCircle,
   Cpu,
   Search,
-  Database
+  Database,
+  LogOut,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,7 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'network', name: 'Memory Network', icon: Network },
     { id: 'ledger', name: 'Hindsight Ledger', icon: History, count: ledgerCount },
     { id: 'evolution', name: 'Company Evolution', icon: TrendingUp },
-    { id: 'intel', name: 'Intel Memos', icon: FileText, count: memoCount }
+    { id: 'intel', name: 'Intel Memos', icon: FileText, count: memoCount },
+    { id: 'profile', name: 'Personal Bubble', icon: User }
   ];
 
   return (
@@ -133,6 +137,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer metadata */}
       <div style={styles.footer}>
+        {supabase && (
+          <button
+            onClick={() => supabase?.auth.signOut()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 12px',
+              backgroundColor: 'transparent',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              width: '100%',
+              marginBottom: '12px',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <LogOut size={14} />
+            Sign Out
+          </button>
+        )}
         <div style={styles.footerCard} className="glass-panel">
           <HelpCircle size={14} color="#94a3b8" style={{ marginRight: 6 }} />
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Memory-First AI</span>

@@ -46,16 +46,36 @@ export interface CompanyExpectation {
   metricTarget: string;
 }
 
+export interface UserProfile {
+  id: string;
+  email?: string;
+  phoneNumber?: string;
+  location?: string;
+  investmentStyle?: string;
+  preferredIndustries?: string[];
+  marketCapPreference?: string[];
+  riskTolerance?: string;
+}
+
 export interface Company {
   id: string;
   name: string;
   ticker: string;
   description: string;
   sector: string;
+  alignmentScore: number;
   revenueData: RevenueDataPoint[];
   products: ProductPerformance[];
   expectations: CompanyExpectation[];
-  alignmentScore: number; // 0 - 100: Expectation vs reality alignment
+  pastIncidents?: Array<{ title: string; impact: string }>;
+  currentIncidents?: Array<{ title: string; impact: string }>;
+  dependencies?: string;
+  growthOutlook?: string;
+  riskFactors?: string;
+  geopoliticalRisks?: string;
+  competitorDependencies?: string;
+  keyInsights?: string[];
+  searchSources?: Array<{ title: string; url: string; snippet: string }>;
 }
 
 export interface MemoryNode {

@@ -140,30 +140,30 @@ export class HindsightAnalyst {
     if (event.impactType === 'positive') {
       deviationValue = event.valueChange > 10 ? 'exceeded_expectations' : 'ahead';
       severity = 'minor';
-      lesson = `Success outcome exceeded targets. Higher scale than modeled was unlocked due to: ${event.title.toLowerCase()}. Maintain upward adjustments on core multipliers.`;
+      lesson = `The company achieved a positive outcome exceeding initial targets following: "${event.title}". Strong customer demand and smooth execution allowed the company to grow faster than expected.`;
     } else if (event.impactType === 'negative') {
       deviationValue = event.valueChange < -10 ? 'cancelled' : 'lagging';
       severity = 'critical';
-      lesson = `Negative friction encountered: ${event.title.toLowerCase()}. Critical failure to secure target metrics on the original timeline suggests structural errors in initial capability assumptions.`;
+      lesson = `The company encountered challenges with "${event.title}", causing delays or missed goals. This indicates that initial project timelines and operational plans faced unexpected difficulties and need careful adjustment.`;
     } else {
       deviationValue = 'on_track';
       severity = 'moderate';
-      lesson = `System is stabilizing around the target metrics. However, minor efficiency shifts require continuous tracking of secondary parameters.`;
+      lesson = `The company is performing steadily and remaining on track with its expected goals following "${event.title}". Continued monitoring of everyday business efficiency and execution is recommended.`;
     }
 
     // Special cases based on keywords
     if (event.title.toLowerCase().includes('blackwell') && event.title.toLowerCase().includes('capacity')) {
       deviationValue = 'exceeded_expectations';
       severity = 'minor';
-      lesson = `Supply chains are more modular than initial bottlenecks suggested. When advanced packaging yields mature, supply velocity catches up instantly. Adjust packaging friction limits downwards by 20%.`;
+      lesson = `Manufacturing and packaging bottlenecks were resolved faster than expected, allowing product supply to catch up with high customer demand without delay.`;
     } else if (event.title.toLowerCase().includes('recall') || event.title.toLowerCase().includes('security')) {
       deviationValue = 'lagging';
       severity = 'moderate';
-      lesson = `Integration of invasive AI features (Recall) triggers instant consumer pushback and regulatory audits. Standard privacy constraints are harder constants than product speed. Always model local opt-in delays.`;
+      lesson = `New product features related to privacy or security sparked consumer concerns and regulatory reviews. This shows that consumer trust and legal compliance can temporarily slow down product rollouts.`;
     } else if (event.title.toLowerCase().includes('probe') || event.title.toLowerCase().includes('phantom')) {
       deviationValue = 'lagging';
       severity = 'critical';
-      lesson = `System verification delays scale exponentially under government probes. Autonomy software lacks deterministic boundaries, making traditional compliance models slow down safety certification.`;
+      lesson = `Government or regulatory investigations are causing delays in product verification and approval. Navigating legal and safety requirements often takes more time than initial software timelines predict.`;
     }
 
     return { deviationValue, lesson, severity };

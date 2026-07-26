@@ -6,8 +6,13 @@ import { HindsightLedgerView } from './components/HindsightLedgerView';
 import { CompanyEvolutionView } from './components/CompanyEvolutionView';
 import { IntelHubView } from './components/IntelHubView';
 import { CompanySearchView } from './components/CompanySearchView';
+import { Auth } from './components/Auth';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { PersonalizationView } from './components/PersonalizationView';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from './utils/supabase';
 
-import { Company, HindsightRecord, MarketEvent, MemoryNode, MemoryEdge, InvestmentMemo, AgentState, AgentLog } from './types';
+import { Company, HindsightRecord, MarketEvent, MemoryNode, MemoryEdge, InvestmentMemo, AgentState, AgentLog, UserProfile } from './types';
 import {
   initialCompanies,
   initialHindsightLedger,
@@ -29,7 +34,8 @@ import {
   saveMemoryNodes,
   saveMemoryEdges,
   saveMemo,
-  seedDatabase
+  seedDatabase,
+  fetchUserProfile
 } from './utils/api';
 import { subscribeToTables } from './utils/supabase';
 
@@ -87,6 +93,9 @@ function App() {
   const [isBackendLive, setIsBackendLive] = useState(false);
   const [hasDatabase, setHasDatabase] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Core Data States
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -103,70 +112,31 @@ function App() {
   // Load all data from Supabase (via backend API)
   const loadAllData = useCallback(async () => {
     try {
-      const [companiesData, eventsData, hindsightData, graphData, memosData] = await Promise.all([
+      const [companiesData, eventsData, hindsightData, graphData, memosData, profileData] = await Promise.all([
         fetchCompanies().catch(() => []),
         fetchEvents().catch(() => []),
         fetchHindsightRecords().catch(() => []),
         fetchMemoryGraph().catch(() => ({ nodes: [], edges: [] })),
-        fetchMemos().catch(() => [])
+        fetchMemos().catch(() => []),
+        fetchUserProfile().catch(() => null)
       ]);
+      setUserProfile(profileData);
 
-      // If database is empty, seed it with mock data
-      if (companiesData.length === 0) {
-        console.log('[App] Database empty — seeding with initial data...');
-        try {
-          const seedResult = await seedDatabase({
-            companies: initialCompanies,
-            hindsightLedger: initialHindsightLedger,
-            marketEvents: initialMarketEvents,
-            memoryNodes: initialMemoryNodes,
-            memoryEdges: initialMemoryEdges,
-            memos: mockMemos
-          });
+      setCompanies(companiesData);
+      setMarketEvents(eventsData);
+      setHindsightLedger(hindsightData);
+      setMemoryNodes(graphData.nodes);
+      setMemoryEdges(graphData.edges);
+      setMemos(memosData);
 
-          if (seedResult.seeded) {
-            // Re-fetch after seeding
-            const [c, e, h, g, m] = await Promise.all([
-              fetchCompanies().catch(() => initialCompanies),
-              fetchEvents().catch(() => initialMarketEvents),
-              fetchHindsightRecords().catch(() => initialHindsightLedger),
-              fetchMemoryGraph().catch(() => ({ nodes: initialMemoryNodes, edges: initialMemoryEdges })),
-              fetchMemos().catch(() => mockMemos)
-            ]);
-            setCompanies(c);
-            setMarketEvents(e);
-            setHindsightLedger(h);
-            setMemoryNodes(g.nodes);
-            setMemoryEdges(g.edges);
-            setMemos(m);
-            return;
-          }
-        } catch (seedErr) {
-          console.warn('[App] Seed failed, using local mock data:', seedErr);
-          setCompanies(initialCompanies);
-          setMarketEvents(initialMarketEvents);
-          setHindsightLedger(initialHindsightLedger);
-          setMemoryNodes(initialMemoryNodes);
-          setMemoryEdges(initialMemoryEdges);
-          setMemos(mockMemos);
-          return;
-        }
-      }
-
-      setCompanies(companiesData.length > 0 ? companiesData : initialCompanies);
-      setMarketEvents(eventsData.length > 0 ? eventsData : initialMarketEvents);
-      setHindsightLedger(hindsightData.length > 0 ? hindsightData : initialHindsightLedger);
-      setMemoryNodes(graphData.nodes.length > 0 ? graphData.nodes : initialMemoryNodes);
-      setMemoryEdges(graphData.edges.length > 0 ? graphData.edges : initialMemoryEdges);
-      setMemos(memosData.length > 0 ? memosData : mockMemos);
     } catch (error) {
       console.error('[App] Failed to load data from API, using fallback:', error);
-      setCompanies(initialCompanies);
-      setHindsightLedger(initialHindsightLedger);
-      setMarketEvents(initialMarketEvents);
-      setMemoryNodes(initialMemoryNodes);
-      setMemoryEdges(initialMemoryEdges);
-      setMemos(mockMemos);
+      setCompanies([]);
+      setHindsightLedger([]);
+      setMarketEvents([]);
+      setMemoryNodes([]);
+      setMemoryEdges([]);
+      setMemos([]);
     }
   }, []);
 
@@ -175,12 +145,35 @@ function App() {
     const init = async () => {
       setIsLoading(true);
 
+      // Auth Session setup
+      if (supabase) {
+        supabase.auth.getSession().then(({ data: { session } }: any) => {
+          setSession(session);
+        });
+
+        supabase.auth.onAuthStateChange((_event: any, session: any) => {
+          setSession(session);
+          if (session) {
+            // Re-fetch data on login
+            loadAllData();
+          } else {
+            // Clear data on logout
+            setCompanies([]);
+            setMarketEvents([]);
+            setHindsightLedger([]);
+            setMemoryNodes([]);
+            setMemoryEdges([]);
+            setMemos([]);
+          }
+        });
+      }
+
       // Check backend config
       const config = await checkBackendConfig();
       setIsBackendLive(config.hasApiKey);
       setHasDatabase(config.hasDatabase);
 
-      // Load data from Supabase via backend
+      // Load data from Supabase via backend (if logged in or using service key initially)
       await loadAllData();
       setIsLoading(false);
     };
@@ -289,15 +282,20 @@ function App() {
         saveHindsightRecord(record).catch(e => console.warn('[Persist] Hindsight save failed:', e));
       }
 
-      // Save new memory nodes and edges
+      // Save new memory nodes FIRST (await), then edges — fixes the FK constraint race condition
+      // (edges reference node IDs; if both fire simultaneously, edges arrive before nodes commit)
       const newNodes = nextState.memoryNodes.filter(
         n => !memoryNodes.some(existing => existing.id === n.id)
       );
       const newEdges = nextState.memoryEdges.filter(
         e => !memoryEdges.some(existing => existing.id === e.id)
       );
-      if (newNodes.length > 0) saveMemoryNodes(newNodes).catch(e => console.warn('[Persist] Nodes save failed:', e));
-      if (newEdges.length > 0) saveMemoryEdges(newEdges).catch(e => console.warn('[Persist] Edges save failed:', e));
+      if (newNodes.length > 0) {
+        await saveMemoryNodes(newNodes).catch(e => console.warn('[Persist] Nodes save failed:', e));
+      }
+      if (newEdges.length > 0) {
+        await saveMemoryEdges(newEdges).catch(e => console.warn('[Persist] Edges save failed:', e));
+      }
 
       // Save new memos
       const newMemos = nextState.memos.filter(
@@ -357,6 +355,7 @@ function App() {
             triggerEventProcessing={triggerEventProcessing}
             isSimulating={isSimulating}
             setIsSimulating={setIsSimulating}
+            userProfile={userProfile}
           />
         );
       case 'search':
@@ -371,6 +370,8 @@ function App() {
           <MemoryGraphView
             nodes={memoryNodes}
             edges={memoryEdges}
+            hindsightLedger={hindsightLedger}
+            companies={companies}
           />
         );
       case 'ledger':
@@ -393,6 +394,13 @@ function App() {
             onUpdateMemo={onUpdateMemo}
           />
         );
+      case 'profile':
+        return (
+          <PersonalizationView
+            profile={userProfile}
+            onProfileUpdate={setUserProfile}
+          />
+        );
       default:
         return (
           <div style={{ padding: '24px' }}>
@@ -401,6 +409,26 @@ function App() {
         );
     }
   };
+
+  if (supabase && !session && !isGuestMode) {
+    return <Auth onGuestContinue={() => setIsGuestMode(true)} />;
+  }
+
+  // Show Onboarding if user has no profile
+  if (session && hasDatabase && !isLoading && !userProfile) {
+    return (
+      <OnboardingWizard onComplete={async (profile) => {
+        try {
+          const saved = await saveUserProfile(profile);
+          setUserProfile(saved);
+        } catch (e) {
+          console.error('Failed to save profile', e);
+          // Optimistically set it anyway so they aren't blocked
+          setUserProfile({ id: session.user.id, ...profile } as UserProfile);
+        }
+      }} />
+    );
+  }
 
   return (
     <div className="app-container">

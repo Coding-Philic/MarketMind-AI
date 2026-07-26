@@ -12,7 +12,12 @@ import {
   Loader,
   AlertTriangle,
   Building2,
-  ChevronRight
+  ChevronRight,
+  TrendingDown,
+  Activity,
+  Link,
+  Target,
+  History
 } from 'lucide-react';
 import { Company } from '../types';
 import { researchCompany, CompanyResearchResult } from '../utils/api';
@@ -69,6 +74,7 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
       clearTimeout(stageTimer2);
       setResult(data);
       setStage('complete');
+      onCompanyAdded(); // Trigger re-fetch of companies so it shows up in sidebar/dropdowns
     } catch (err: unknown) {
       clearTimeout(stageTimer1);
       clearTimeout(stageTimer2);
@@ -102,9 +108,60 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
 
   const isLoading = stage === 'searching' || stage === 'analyzing' || stage === 'profiling';
 
+  const handleLoadCompany = (c: Company) => {
+    setQuery(c.name);
+    setError('');
+    setResult({
+      success: true,
+      company: {
+        ...c,
+        geopoliticalRisks: c.geopoliticalRisks,
+        competitorDependencies: c.competitorDependencies,
+        keyInsights: c.keyInsights || []
+      },
+      searchSources: c.searchSources?.length > 0 ? c.searchSources : [
+        { title: 'Saved AI Intelligence', url: '#', snippet: 'This profile was instantly loaded from your local database.' }
+      ]
+    });
+    setStage('complete');
+  };
+
   return (
-    <div>
-      {/* Header */}
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      
+      {/* Saved Companies Sidebar */}
+      <div style={styles.sidebar} className="glass-panel">
+        <div style={styles.sidebarHeader}>
+          <Building2 size={16} color="#6366f1" />
+          <h3 style={styles.sidebarTitle}>Saved Intel</h3>
+        </div>
+        <div style={styles.sidebarList}>
+          {companies.length === 0 ? (
+            <div style={styles.sidebarEmpty}>No companies saved yet.</div>
+          ) : (
+            companies.map(c => (
+              <button 
+                key={c.id} 
+                style={{
+                  ...styles.sidebarItem,
+                  ...(result?.company.id === c.id ? styles.sidebarItemActive : {})
+                }}
+                onClick={() => handleLoadCompany(c)}
+              >
+                <div style={styles.sidebarItemMeta}>
+                  <span style={styles.sidebarItemName}>{c.name.length > 20 ? c.name.substring(0, 18) + '...' : c.name}</span>
+                  <span style={styles.sidebarItemTicker}>{c.ticker}</span>
+                </div>
+                <ChevronRight size={14} color={result?.company.id === c.id ? '#ffffff' : '#64748b'} />
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
+        {/* Header */}
       <div className="top-nav">
         <h1 className="page-title">Company Research</h1>
         {stage === 'complete' && (
@@ -322,34 +379,110 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
             </div>
           )}
 
-          {/* Geopolitical & Competitor Analysis */}
+          {/* New Detailed RAG Parameters */}
           <div style={styles.resultCard} className="glass-panel">
             <div style={styles.resultHeader}>
-              <Shield size={18} color="#f59e0b" />
-              <h3>Risk & Dependency Analysis</h3>
+              <Target size={18} color="#10b981" />
+              <h3>Detailed RAG Profile</h3>
             </div>
-            {result.company.geopoliticalRisks && (
-              <div style={styles.analysisBlock}>
-                <h4 style={styles.analysisSubhead}>
-                  <Globe size={14} color="#f59e0b" /> Geopolitical Risks
-                </h4>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <History size={14} color="#f43f5e" /> Past Incidents
+              </h4>
+              {result.company.pastIncidents && result.company.pastIncidents.length > 0 ? (
+                result.company.pastIncidents.map((inc, i) => (
+                  <div key={i} style={{ marginBottom: 8 }}>
+                    <strong style={{ color: '#f1f5f9', fontSize: '0.85rem' }}>{inc.title}: </strong>
+                    <span style={styles.analysisText}>{inc.impact}</span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No major past incidents tracked.</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <Activity size={14} color="#f59e0b" /> Current Incidents
+              </h4>
+              {result.company.currentIncidents && result.company.currentIncidents.length > 0 ? (
+                result.company.currentIncidents.map((inc, i) => (
+                  <div key={i} style={{ marginBottom: 8 }}>
+                    <strong style={{ color: '#f1f5f9', fontSize: '0.85rem' }}>{inc.title}: </strong>
+                    <span style={styles.analysisText}>{inc.impact}</span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>No active incidents at this time.</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <Link size={14} color="#6366f1" /> Operational Dependencies
+              </h4>
+              {result.company.dependencies ? (
+                <p style={styles.analysisText}>{result.company.dependencies}</p>
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Data not available</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <TrendingUp size={14} color="#10b981" /> 10-Year Growth Outlook
+              </h4>
+              {result.company.growthOutlook ? (
+                <p style={styles.analysisText}>{result.company.growthOutlook}</p>
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Data not available</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <TrendingDown size={14} color="#f43f5e" /> Risk Factors
+              </h4>
+              {result.company.riskFactors ? (
+                <p style={styles.analysisText}>{result.company.riskFactors}</p>
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Data not available</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <Globe size={14} color="#f59e0b" /> Geopolitical Risks
+              </h4>
+              {result.company.geopoliticalRisks ? (
                 <p style={styles.analysisText}>{result.company.geopoliticalRisks}</p>
-              </div>
-            )}
-            {result.company.competitorDependencies && (
-              <div style={styles.analysisBlock}>
-                <h4 style={styles.analysisSubhead}>
-                  <Users size={14} color="#6366f1" /> Competitor & Supply Chain
-                </h4>
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Data not available</span>
+              )}
+            </div>
+            
+            <div style={styles.analysisBlock}>
+              <h4 style={styles.analysisSubhead}>
+                <Users size={14} color="#6366f1" /> Competitor Dynamics
+              </h4>
+              {result.company.competitorDependencies ? (
                 <p style={styles.analysisText}>{result.company.competitorDependencies}</p>
-              </div>
-            )}
-            {result.company.keyInsights && (
+              ) : (
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Data not available</span>
+              )}
+            </div>
+            
+            {result.company.keyInsights && result.company.keyInsights.length > 0 && (
               <div style={styles.analysisBlock}>
                 <h4 style={styles.analysisSubhead}>
                   <Sparkles size={14} color="#10b981" /> Key Strategic Insights
                 </h4>
-                <p style={styles.analysisText}>{result.company.keyInsights}</p>
+                <ul style={{ paddingLeft: 20, margin: 0, color: '#cbd5e1', fontSize: '0.84rem' }}>
+                  {result.company.keyInsights.map((insight, i) => (
+                    <li key={i} style={{ marginBottom: 4 }}>{insight}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
@@ -411,6 +544,7 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };
@@ -793,5 +927,73 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#64748b',
     maxWidth: 480,
     margin: '0 auto'
+  },
+  sidebar: {
+    width: '260px',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    height: 'calc(100vh - 40px)',
+    position: 'sticky' as const,
+    top: '20px',
+  },
+  sidebarHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '20px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+  },
+  sidebarTitle: {
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    color: '#f8fafc',
+    margin: 0,
+  },
+  sidebarList: {
+    flex: 1,
+    overflowY: 'auto' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    padding: '12px',
+    gap: '8px',
+  },
+  sidebarItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 14px',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    textAlign: 'left' as const,
+  },
+  sidebarItemActive: {
+    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))',
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  sidebarItemMeta: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+  },
+  sidebarItemName: {
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    color: '#e2e8f0',
+  },
+  sidebarItemTicker: {
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    color: '#6366f1',
+    letterSpacing: '0.05em',
+  },
+  sidebarEmpty: {
+    padding: '20px',
+    textAlign: 'center' as const,
+    color: '#64748b',
+    fontSize: '0.8rem',
   }
 };
