@@ -251,7 +251,7 @@ export const MemoryGraphView: React.FC<MemoryGraphViewProps> = ({ nodes, edges, 
     breakdown.push(`Edge Density: ${edges.length} edges across ${nodes.length} nodes — ${edgesPerNode.toFixed(1)} links/node (${densityScore}/25 pts)`);
 
     // Metric 3: Hindsight Integration — are lessons present in graph? (25 pts)
-    const hindsightNodeCount = nodes.filter(n => n.group === 'hindsight_lesson' || n.group === 'theme').length;
+    const hindsightNodeCount = nodes.filter(n => n.group === 'hindsight_lesson' || (n.group as string) === 'theme').length;
     const hindsightIntScore = nodes.length > 0
       ? Math.min(Math.round((hindsightNodeCount / nodes.length) * 40), 25)
       : 0;
