@@ -98,21 +98,25 @@ app.use('/api/seed', seedRouter);
 // ---------------------------------------------------------------------------
 // Start Server
 // ---------------------------------------------------------------------------
-const server = app.listen(PORT, () => {
-  console.log(`[Server] MarketMind AI Backend running on http://localhost:${PORT}`);
-  console.log(`[Server] Groq API: ${process.env.GROQ_API_KEY ? 'Configured' : 'NOT SET'}`);
-  console.log(`[Server] Tavily API: ${process.env.TAVILY_API_KEY ? 'Configured' : 'NOT SET'}`);
-  console.log(`[Server] Supabase: ${supabase ? 'Connected' : 'NOT SET'}`);
-  console.log(`[Server] Modular architecture loaded successfully.`);
-});
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, () => {
+    console.log(`[Server] MarketMind AI Backend running on http://localhost:${PORT}`);
+    console.log(`[Server] Groq API: ${process.env.GROQ_API_KEY ? 'Configured' : 'NOT SET'}`);
+    console.log(`[Server] Tavily API: ${process.env.TAVILY_API_KEY ? 'Configured' : 'NOT SET'}`);
+    console.log(`[Server] Supabase: ${supabase ? 'Connected' : 'NOT SET'}`);
+    console.log(`[Server] Modular architecture loaded successfully.`);
+  });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\n[Server Error] Port ${PORT} is already in use! The MarketMind AI backend is currently running in a background process or another terminal tab.`);
-    console.error(`Tip: If you want to restart it in this terminal, run: pkill -f "node server.js" and try again.\n`);
-    process.exit(1);
-  } else {
-    console.error('[Server Error]', err);
-    process.exit(1);
-  }
-});
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n[Server Error] Port ${PORT} is already in use! The MarketMind AI backend is currently running in a background process or another terminal tab.`);
+      console.error(`Tip: If you want to restart it in this terminal, run: pkill -f "node server.js" and try again.\n`);
+      process.exit(1);
+    } else {
+      console.error('[Server Error]', err);
+      process.exit(1);
+    }
+  });
+}
+
+export default app;
