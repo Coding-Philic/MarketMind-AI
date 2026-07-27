@@ -52,7 +52,12 @@ export async function queryGroq(prompt, options = {}) {
   let lastError = null;
   for (const currentModel of modelsToTry) {
     try {
-      log('Groq Request', { model: currentModel, promptLength: prompt.length });
+      const currentDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const currentYear = new Date().getFullYear();
+      const timeContextClause = `\n\nCURRENT DATE & REAL-TIME MANDATE: Today is ${currentDateStr} (Year ${currentYear}). You MUST perform all financial research, valuation analysis, revenue trajectories, product ecosystem reviews, and investment memos up to today in ${currentYear}. NEVER stop at older years (like 2024 or 2025) when analyzing current trends; always reflect the present-day real-world status as of today in ${currentYear}.`;
+      const systemContent = (options.system || defaultSystemPrompt) + timeContextClause;
+
+      log('Groq Request', { model: currentModel, promptLength: prompt.length, currentYear });
       const response = await fetchWithTimeout(
         'https://api.groq.com/openai/v1/chat/completions',
         {
@@ -64,7 +69,7 @@ export async function queryGroq(prompt, options = {}) {
           body: JSON.stringify({
             model: currentModel,
             messages: [
-              { role: 'system', content: options.system || defaultSystemPrompt },
+              { role: 'system', content: systemContent },
               { role: 'user', content: prompt }
             ],
             max_tokens: maxTokens,

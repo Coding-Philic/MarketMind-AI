@@ -123,7 +123,7 @@ const RichMemoRenderer: React.FC<{ content: string }> = ({ content }) => {
         i++;
       }
       elements.push(
-        <div key={`table-${i}`} style={{ overflowX: 'auto', marginBottom: '18px', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.2)' }}>
+        <div key={`table-${i}`} style={{ overflowX: 'auto', width: '100%', maxWidth: '100%', marginBottom: '18px', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.2)', boxSizing: 'border-box' }}>
           <table style={mdStyles.table}>
             <thead>
               <tr>{headers.map((h, hi) => <th key={hi} style={mdStyles.th}>{renderInlineMarkdown(h)}</th>)}</tr>
@@ -231,9 +231,9 @@ export const IntelHubView: React.FC<IntelHubViewProps> = ({ memos, onUpdateMemo 
         <h1 className="page-title">Institutional Intelligence Hub</h1>
       </div>
 
-      <div style={styles.hubContainer}>
+      <div style={styles.hubContainer} className="hub-container">
         {/* Memo listings list */}
-        <div style={styles.memoListPane} className="glass-panel">
+        <div style={styles.memoListPane} className="memo-list-pane glass-panel">
           <div style={styles.paneHeader}>
             <FileText size={16} color="#6366f1" />
             <h3>Generated Memos ({memos.length})</h3>
@@ -279,20 +279,20 @@ export const IntelHubView: React.FC<IntelHubViewProps> = ({ memos, onUpdateMemo 
               ...styles.viewerPane, 
               boxShadow: getRatingGlow(activeMemo.recommendation)
             }} 
-            className="glass-panel"
+            className="viewer-pane glass-panel"
           >
             {/* Viewer Header bar */}
-            <div style={styles.viewerHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={styles.viewerHeader} className="viewer-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
                 <div style={styles.tickerBadge}>{activeMemo.ticker}</div>
-                <div>
-                  <h2 style={styles.viewerMemoTitle}>{activeMemo.title}</h2>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h2 style={{ ...styles.viewerMemoTitle, wordBreak: 'break-word' }}>{activeMemo.title}</h2>
                   <p style={styles.viewerMeta}>Compiled: {new Date(activeMemo.timestamp).toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Utility actions */}
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="viewer-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {isEditing ? (
                   <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 14px' }}>
                     <Save size={14} />
@@ -312,25 +312,25 @@ export const IntelHubView: React.FC<IntelHubViewProps> = ({ memos, onUpdateMemo 
             </div>
 
             {/* Sub-header Score summary */}
-            <div style={styles.scoreSummaryBar}>
-              <div style={styles.summaryMetric}>
+            <div style={styles.scoreSummaryBar} className="score-summary-bar">
+              <div style={styles.summaryMetric} className="summary-metric">
                 <span style={styles.metricLabel}>RECOMMENDATION</span>
                 <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
                   {activeMemo.recommendation}
                 </span>
               </div>
-              <div style={styles.summaryDivider} />
+              <div style={styles.summaryDivider} className="summary-divider" />
               
-              <div style={styles.summaryMetric}>
+              <div style={styles.summaryMetric} className="summary-metric">
                 <span style={styles.metricLabel}>CONVICTION RATIO</span>
                 <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Award size={16} color="#f59e0b" />
                   {activeMemo.convictionScore}/10
                 </span>
               </div>
-              <div style={styles.summaryDivider} />
+              <div style={styles.summaryDivider} className="summary-divider" />
 
-              <div style={styles.summaryMetric}>
+              <div style={styles.summaryMetric} className="summary-metric">
                 <span style={styles.metricLabel}>SOURCE BASELINE</span>
                 <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
                   Hindsight Audit
@@ -354,7 +354,7 @@ export const IntelHubView: React.FC<IntelHubViewProps> = ({ memos, onUpdateMemo 
             </div>
           </div>
         ) : (
-          <div style={styles.emptyViewer} className="glass-panel">
+          <div style={styles.emptyViewer} className="empty-viewer glass-panel">
             <AlertCircle size={32} color="#475569" style={{ marginBottom: '8px' }} />
             <p>Select a generated brief to view full investment intelligence documents.</p>
           </div>
@@ -370,6 +370,10 @@ const styles = {
     gap: '24px',
     alignItems: 'stretch',
     flexWrap: 'wrap' as const,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   memoListPane: {
     flex: '1 1 300px',
@@ -377,6 +381,9 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     maxHeight: '560px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   paneHeader: {
     display: 'flex',
@@ -451,6 +458,9 @@ const styles = {
     borderWidth: '1px',
     borderStyle: 'solid',
     borderColor: 'rgba(255, 255, 255, 0.06)',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   viewerHeader: {
     display: 'flex',
@@ -459,6 +469,10 @@ const styles = {
     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
     paddingBottom: '16px',
     marginBottom: '16px',
+    flexWrap: 'wrap' as const,
+    gap: '12px',
+    minWidth: 0,
+    maxWidth: '100%',
   },
   tickerBadge: {
     background: 'linear-gradient(135deg, #6366f1, #a855f7)',
@@ -486,12 +500,18 @@ const styles = {
     borderRadius: '8px',
     marginBottom: '20px',
     border: '1px solid rgba(255, 255, 255, 0.02)',
+    flexWrap: 'wrap' as const,
+    gap: '12px',
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box' as const,
   },
   summaryMetric: {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '4px',
     flex: 1,
+    minWidth: 0,
   },
   metricLabel: {
     fontSize: '0.65rem',
@@ -509,6 +529,9 @@ const styles = {
     flexGrow: 1,
     overflowY: 'auto' as const,
     paddingRight: '6px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   editorTextarea: {
     width: '100%',
@@ -523,11 +546,16 @@ const styles = {
     padding: '12px',
     outline: 'none',
     resize: 'none' as const,
+    boxSizing: 'border-box' as const,
   },
   markdownContent: {
     fontFamily: 'inherit',
     lineHeight: '1.55',
     color: '#cbd5e1',
+    wordBreak: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   mdHeader3: {
     fontSize: '1rem',
@@ -560,5 +588,8 @@ const styles = {
     textAlign: 'center' as const,
     height: '400px',
     color: '#475569',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   }
 };

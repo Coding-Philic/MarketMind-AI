@@ -376,9 +376,9 @@ export const MemoryGraphView: React.FC<MemoryGraphViewProps> = ({ nodes, edges, 
         </div>
       </div>
 
-      <div style={styles.layoutWrapper}>
+      <div style={styles.layoutWrapper} className="layout-wrapper">
         {/* Sidebar filters */}
-        <div style={styles.filtersPane} className="glass-panel">
+        <div style={styles.filtersPane} className="filters-pane glass-panel">
           <div style={styles.filterTitle}>
             <Filter size={16} color="#6366f1" />
             <h3>Filter Memory Categories</h3>
@@ -569,7 +569,7 @@ export const MemoryGraphView: React.FC<MemoryGraphViewProps> = ({ nodes, edges, 
         </div>
 
         {/* SVG Canvas Area */}
-        <div style={styles.canvasContainer} className="glass-panel">
+        <div style={styles.canvasContainer} className="canvas-container glass-panel">
           <svg
             ref={containerRef}
             width={width}
@@ -745,6 +745,10 @@ const styles = {
     gap: '24px',
     alignItems: 'stretch',
     flexWrap: 'wrap' as const,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   filtersPane: {
     flex: '1 1 240px',
@@ -752,6 +756,9 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '16px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   filterTitle: {
     display: 'flex',
@@ -832,5 +839,8 @@ const styles = {
     minHeight: '750px',
     padding: '6px',
     overflow: 'auto',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   }
 };

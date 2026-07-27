@@ -12,7 +12,8 @@ import {
   Search,
   Database,
   LogOut,
-  User
+  User,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,6 +23,8 @@ interface SidebarProps {
   ledgerCount: number;
   isLiveAi: boolean;
   hasDatabase: boolean;
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: (open: boolean) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -30,7 +33,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   memoCount, 
   ledgerCount,
   isLiveAi,
-  hasDatabase
+  hasDatabase,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen
 }) => {
   const navItems = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
@@ -43,13 +48,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside style={styles.sidebar}>
+    <aside style={styles.sidebar} className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       {/* Brand logo */}
       <div style={styles.brandContainer}>
-        <div style={styles.logoWrapper}>
-          <Brain size={24} color="#6366f1" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexGrow: 1 }}>
+          <div style={styles.logoWrapper}>
+            <Brain size={24} color="#6366f1" />
+          </div>
+          <span style={styles.brandName}>MarketMind AI</span>
         </div>
-        <span style={styles.brandName}>MarketMind AI</span>
+        {setIsMobileMenuOpen && (
+          <button 
+            className="mobile-close-btn" 
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <X size={20} color="#94a3b8" />
+          </button>
+        )}
       </div>
 
       {/* Navigation tabs */}
@@ -58,12 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           
-          return (
+            return (
             <button
               key={item.id}
               onClick={() => {
                 console.log('[UI] Button action: Open tab', { tab: item.name, id: item.id });
                 setActiveTab(item.id);
+                if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
               }}
               style={{
                 ...styles.navBtn,
@@ -180,8 +197,8 @@ const styles = {
     position: 'fixed' as const,
     left: 0,
     top: 0,
-    background: 'rgba(10, 13, 26, 0.95)',
-    borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+    background: '#080a14',
+    borderRight: '1px solid rgba(255, 255, 255, 0.08)',
     display: 'flex',
     flexDirection: 'column' as const,
     padding: '24px 16px',

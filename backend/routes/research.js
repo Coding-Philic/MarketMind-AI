@@ -18,9 +18,13 @@ router.post('/', async (req, res) => {
   log('Company Research', { query });
 
   try {
+    const currentYear = new Date().getFullYear();
+    const prevYear = currentYear - 1;
+    const startYear = currentYear - 10;
+
     // Step 1: Web search for latest company data
     const searchResults = await searchTavily(
-      `${query} company overview financials products revenue sector 2024 2025`,
+      `${query} company overview financials products revenue sector ${prevYear} ${currentYear} latest news today`,
       { maxResults: 5 }
     );
 
@@ -153,6 +157,12 @@ The user requesting this profile has the following personalized interests:
 Please tailor the "keyInsights" and "riskFactors" in your JSON response to highlight how this company aligns (or misaligns) with the user's specific interests and risk profile.`;
     }
 
+    const sampleRevenueArray = [];
+    for (let y = startYear; y <= currentYear; y++) {
+      sampleRevenueArray.push(`    {"period": "${y}", "revenue": 0, "netMargin": 0}`);
+    }
+    const sampleRevenueStr = `[\n${sampleRevenueArray.join(',\n')}\n  ]`;
+
     const analysisPrompt = `You are a professional stock market research analyst. Using the RAG-retrieved web search results and 10-year historical financial data below, create a detailed, reliable company profile based on trusted financial data and verified market research.
 
 CRITICAL LANGUAGE & STYLE REQUIREMENT:
@@ -173,24 +183,12 @@ Create a structured JSON response with EXACTLY this format (no markdown, no code
   "description": "2-3 sentence company description covering core business, market position, and strategic direction.",
   "sector": "Primary sector",
   "alignmentScore": 50,
-  "revenueData": [
-    {"period": "2015", "revenue": 0, "netMargin": 0},
-    {"period": "2016", "revenue": 0, "netMargin": 0},
-    {"period": "2017", "revenue": 0, "netMargin": 0},
-    {"period": "2018", "revenue": 0, "netMargin": 0},
-    {"period": "2019", "revenue": 0, "netMargin": 0},
-    {"period": "2020", "revenue": 0, "netMargin": 0},
-    {"period": "2021", "revenue": 0, "netMargin": 0},
-    {"period": "2022", "revenue": 0, "netMargin": 0},
-    {"period": "2023", "revenue": 0, "netMargin": 0},
-    {"period": "2024", "revenue": 0, "netMargin": 0},
-    {"period": "2025", "revenue": 0, "netMargin": 0}
-  ],
+  "revenueData": ${sampleRevenueStr},
   "products": [
     {"name": "Product Name", "status": "active", "marketAdoption": 50, "hindsightDelta": 0, "revenueShare": 30, "rating": 4.6, "reviewCount": 140, "category": "Cloud & AI"}
   ],
   "expectations": [
-    {"id": "exp-1", "description": "Key strategic expectation", "targetTimeline": "Q4 2025", "metricTarget": "Metric name"}
+    {"id": "exp-1", "description": "Key strategic expectation", "targetTimeline": "Q4 ${currentYear}", "metricTarget": "Metric name"}
   ],
   "pastIncidents": [
     {"title": "Incident Name", "impact": "Description of past impact"}
@@ -208,7 +206,7 @@ Create a structured JSON response with EXACTLY this format (no markdown, no code
 
 IMPORTANT:
 - Revenue should be in millions USD.
-- You MUST provide EXACTLY 10 to 11 years of consecutive data in the revenueData array (e.g. 2015 to 2025). Do not truncate it.
+- You MUST provide EXACTLY 10 to 11 years of consecutive data in the revenueData array (e.g. ${startYear} to ${currentYear}). Do not truncate it. Ensure data goes up to the present year ${currentYear} (or current TTM ${currentYear}).
 - Use the 10-year historical snapshot to inform your analysis.
 - If you cannot find specific data, provide reasonable estimates based on the company's known profile.
 - 'hindsightDelta' in products MUST be a non-zero integer between -20 and +20 representing market momentum relative to expectations.
@@ -287,7 +285,7 @@ IMPORTANT:
           }
 
           const enforcedData = [];
-          for (let y = 2015; y <= 2025; y++) {
+          for (let y = startYear; y <= currentYear; y++) {
             if (yearMap.has(y)) {
               lastValid = yearMap.get(y);
               enforcedData.push(lastValid);

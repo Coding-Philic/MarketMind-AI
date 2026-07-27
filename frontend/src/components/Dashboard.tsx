@@ -219,7 +219,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Agents Matrix Section */}
       <h2 style={styles.sectionHeader}>Cognitive Agent Matrix</h2>
-      <div style={styles.agentsGrid}>
+      <div style={styles.agentsGrid} className="agents-grid">
         {agents.map((agent) => {
           const isWorking = agent.status !== 'idle';
           
@@ -286,17 +286,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Console and Injection Row */}
-      <div style={styles.twoColumnRow}>
+      <div style={styles.twoColumnRow} className="two-column-row">
         {/* Terminal logs console */}
-        <div style={{ ...styles.columnCard, flexGrow: 2 }} className="glass-panel">
-          <div style={styles.cardHeader}>
+        <div style={{ ...styles.columnCard, flexGrow: 2 }} className="column-card glass-panel">
+          <div style={styles.cardHeader} className="console-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Terminal size={18} color="#6366f1" />
               <h3>Autonomous Reasoning Terminal</h3>
             </div>
             
             {/* Filter tags */}
-            <div style={styles.consoleFilters}>
+            <div style={styles.consoleFilters} className="console-filters">
               {['all', 'monitor', 'analyst', 'consolidator', 'intel'].map((fId) => (
                 <button
                   key={fId}
@@ -336,8 +336,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Custom Event Injector */}
-        <div style={{ ...styles.columnCard, flexGrow: 1 }} className="glass-panel">
-          <div style={styles.cardHeader}>
+        <div style={{ ...styles.columnCard, flexGrow: 1 }} className="column-card glass-panel">
+          <div style={styles.cardHeader} className="card-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Plus size={18} color="#6366f1" />
               <h3>Custom Event Injector</h3>
@@ -539,22 +539,36 @@ const styles = {
     gap: '24px',
     flexWrap: 'wrap' as const,
     alignItems: 'stretch',
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   columnCard: {
     padding: '20px',
     display: 'flex',
     flexDirection: 'column' as const,
     flex: '1 1 350px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   cardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '16px',
+    flexWrap: 'wrap' as const,
+    gap: '12px',
+    minWidth: 0,
+    maxWidth: '100%',
   },
   consoleFilters: {
     display: 'flex',
     gap: '6px',
+    flexWrap: 'wrap' as const,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   filterTab: {
     background: 'rgba(255,255,255,0.03)',

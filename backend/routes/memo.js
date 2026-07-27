@@ -23,8 +23,9 @@ router.post('/', async (req, res) => {
   // Step 1: Web search & Yahoo Finance lookup for event / company
   let eventSearchContext = '';
   try {
+    const currentYear = new Date().getFullYear();
     const searchResults = await searchTavily(
-      `${companyName} ${ticker} ${eventTitle} latest news financials impact`,
+      `${companyName} ${ticker} ${eventTitle} latest news financials impact ${currentYear} today`,
       { maxResults: 3 }
     );
     let financeContext = '';
@@ -105,6 +106,8 @@ You are the Revenue Intelligence Agent for MarketMind AI. Write an institutional
 
 CRITICAL LANGUAGE & STYLE REQUIREMENT:
 Write this entire memo in completely professional yet clear, accessible, and easy-to-understand language. Every concept, market reaction, financial metric, and strategic impact MUST be explained so that anyone—even a person with zero background in stocks, finance, market share, or geopolitical events—can read this memo and easily understand what is happening in the company and the market. Frame your analysis as a professional stock market expert utilizing reliable, trusted research, while translating complex financial terminology into clear, accessible everyday language without losing professional depth. Avoid unexplained jargon or acronyms.
+
+REAL-TIME TIME MANDATE: Today is Year ${new Date().getFullYear()}. Ensure your analysis, valuation metrics, and forward growth outlook reflect real-time developments up to today in ${new Date().getFullYear()}. NEVER treat older years like 2024 or 2025 as the current present.
 
 Use the condensed research context below and keep the memo concise, practical, and accessible.
 

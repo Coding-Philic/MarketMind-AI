@@ -102,25 +102,54 @@ export const CompanyEvolutionView: React.FC<CompanyEvolutionViewProps> = ({
       <div className="top-nav">
         <h1 className="page-title">Company Evolution Tracker</h1>
         <div style={styles.companySelector}>
-          {companies.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => { setSelectedId(c.id); setHoveredPoint(null); }}
+          {/* Desktop Button Row */}
+          <div className="desktop-company-selector" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {companies.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => { setSelectedId(c.id); setHoveredPoint(null); }}
+                style={{
+                  ...styles.selectorBtn,
+                  ...(selectedId === c.id ? styles.selectorBtnActive : {})
+                }}
+                className={selectedId === c.id ? '' : 'glass-panel-interactive'}
+              >
+                {c.ticker}
+              </button>
+            ))}
+          </div>
+          {/* Mobile Dropdown Select */}
+          <div className="mobile-company-selector" style={{ display: 'none', width: '100%', marginTop: '4px' }}>
+            <select
+              value={selectedId}
+              onChange={(e) => { setSelectedId(e.target.value); setHoveredPoint(null); }}
+              className="glass-panel"
               style={{
-                ...styles.selectorBtn,
-                ...(selectedId === c.id ? styles.selectorBtnActive : {})
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: '#0e1220',
+                color: '#ffffff',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer'
               }}
-              className={selectedId === c.id ? '' : 'glass-panel-interactive'}
             >
-              {c.ticker}
-            </button>
-          ))}
+              {companies.map((c) => (
+                <option key={c.id} value={c.id} style={{ background: '#0e1220', color: '#ffffff', padding: '8px' }}>
+                  {c.ticker} — {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div style={styles.dashboardGrid}>
+      <div style={styles.dashboardGrid} className="evolution-grid">
         {/* Left column - General summary & Charts */}
-        <div style={styles.leftCol}>
+        <div style={styles.leftCol} className="evolution-col">
           {/* Summary Panel */}
           <div style={styles.summaryCard} className="glass-panel">
             <div style={styles.summaryHeader}>
@@ -352,7 +381,7 @@ export const CompanyEvolutionView: React.FC<CompanyEvolutionViewProps> = ({
           </div>
 
         {/* Right column - Target expectations & Product list */}
-        <div style={styles.rightCol}>
+        <div style={styles.rightCol} className="evolution-col">
           {/* Registered Expectations */}
           <div style={styles.expectationsCard} className="glass-panel">
             <div style={styles.cardHeaderWithIcon}>
@@ -566,27 +595,44 @@ const styles = {
     gap: '24px',
     alignItems: 'stretch',
     flexWrap: 'wrap' as const,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   leftCol: {
     flex: '3 1 480px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '24px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   rightCol: {
     flex: '2 1 340px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '24px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   summaryCard: {
     padding: '24px',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   summaryHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '16px',
+    flexWrap: 'wrap' as const,
+    gap: '12px',
+    minWidth: 0,
+    maxWidth: '100%',
   },
   compTitle: {
     fontSize: '1.4rem',

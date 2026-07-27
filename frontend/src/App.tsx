@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Menu, X, Brain } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { MemoryGraphView } from './components/MemoryGraphView';
@@ -97,6 +98,7 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Core Data States
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -433,6 +435,36 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Top Bar */}
+      <header className="mobile-top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, overflow: 'hidden' }}>
+          <button 
+            className="mobile-menu-btn" 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            style={{ flexShrink: 0 }}
+          >
+            {isMobileMenuOpen ? <X size={24} color="#fff" /> : <Menu size={24} color="#fff" />}
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
+            <Brain size={24} color="#6366f1" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>MarketMind AI</span>
+          </div>
+        </div>
+        <div className="pulse-badge" style={{ padding: '4px 10px', fontSize: '0.75rem', flexShrink: 0 }}>
+          <div className="pulse-dot" />
+          <span>{isBackendLive ? 'Live AI' : 'Local Mode'}</span>
+        </div>
+      </header>
+
+      {/* Backdrop for Mobile Sidebar */}
+      {isMobileMenuOpen && (
+        <div 
+          className="mobile-backdrop" 
+          onClick={() => setIsMobileMenuOpen(false)} 
+        />
+      )}
+
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
@@ -441,11 +473,13 @@ function App() {
         ledgerCount={hindsightLedger.length}
         isLiveAi={isBackendLive}
         hasDatabase={hasDatabase}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
       {/* Main View Port */}
       <main className="main-content">
-        <div style={{ flexGrow: 1 }}>
+        <div style={{ flexGrow: 1, width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           {renderTabContent()}
         </div>
       </main>

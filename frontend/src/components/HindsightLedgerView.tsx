@@ -142,8 +142,8 @@ export const HindsightLedgerView: React.FC<HindsightLedgerViewProps> = ({ ledger
                   </div>
 
                   {/* Comparatives block */}
-                  <div style={styles.comparativeBlock}>
-                    <div style={styles.comparativeItem}>
+                  <div style={styles.comparativeBlock} className="comparative-block">
+                    <div style={styles.comparativeItem} className="comparative-item">
                       <span style={styles.compLabel}>REGISTERED EXPECTATION</span>
                       <p style={styles.compText}>{record.expectationDescription}</p>
                       <span style={styles.timelineBadge}>Target: {record.expectedTimeline}</span>
@@ -151,7 +151,7 @@ export const HindsightLedgerView: React.FC<HindsightLedgerViewProps> = ({ ledger
                     <div style={styles.arrowIcon}>
                       <ArrowRight size={20} color="#475569" />
                     </div>
-                    <div style={styles.comparativeItem}>
+                    <div style={styles.comparativeItem} className="comparative-item">
                       <span style={styles.compLabel}>ACTUAL OUTCOME RECORD</span>
                       <p style={styles.compText}>{record.actualOutcomeDescription}</p>
                     </div>
@@ -275,6 +275,10 @@ const styles = {
     gap: '16px',
     alignItems: 'stretch',
     flexWrap: 'wrap' as const,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   comparativeItem: {
     flex: '1 1 250px',
@@ -285,6 +289,9 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     justifyContent: 'space-between',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box' as const,
   },
   compLabel: {
     fontSize: '0.7rem',

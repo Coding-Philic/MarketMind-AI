@@ -128,10 +128,10 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+    <div className="research-layout" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
       
       {/* Saved Companies Sidebar */}
-      <div style={styles.sidebar} className="glass-panel">
+      <div style={styles.sidebar} className="glass-panel desktop-saved-intel">
         <div style={styles.sidebarHeader}>
           <Building2 size={16} color="#6366f1" />
           <h3 style={styles.sidebarTitle}>Saved Intel</h3>
@@ -162,6 +162,42 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
 
       {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
+        {/* Mobile Saved Intel Dropdown */}
+        {companies.length > 0 && (
+          <div className="mobile-saved-intel" style={{ display: 'none', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>
+              <Building2 size={14} color="#6366f1" />
+              <span>Load Saved Intel:</span>
+            </div>
+            <select
+              onChange={(e) => {
+                const comp = companies.find(c => c.id === e.target.value);
+                if (comp) handleLoadCompany(comp);
+              }}
+              value={result?.company.id || ''}
+              className="glass-panel"
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: '#0e1220',
+                color: '#ffffff',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="" disabled style={{ background: '#0e1220', color: '#64748b' }}>Select a saved company...</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id} style={{ background: '#0e1220', color: '#ffffff', padding: '8px' }}>
+                  {c.ticker} — {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {/* Header */}
       <div className="top-nav">
         <h1 className="page-title">Company Research</h1>

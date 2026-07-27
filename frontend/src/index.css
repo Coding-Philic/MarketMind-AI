@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 :root {
-  --bg-main: #070913;
-  --bg-card: rgba(15, 19, 36, 0.7);
-  --bg-card-hover: rgba(23, 28, 51, 0.85);
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-focus: rgba(99, 102, 241, 0.4);
+  --bg-main: #06080f; /* Deep Solid Obsidian */
+  --bg-card: #0e1220; /* Solid Sleek Dark Slate */
+  --bg-card-hover: #151b2f; /* Solid Elevated Slate */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(99, 102, 241, 0.5);
   
   --color-primary: #6366f1; /* Indigo */
   --color-secondary: #a855f7; /* Violet */
@@ -223,18 +223,27 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px;
   padding: 16px;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: 240px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   font-size: 0.85rem;
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .console-line {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .console-time {
@@ -397,4 +406,275 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ---------------------------------------------------------------------------
+   RESPONSIVE DESIGN (LAPTOP, TABLET & MOBILE)
+   --------------------------------------------------------------------------- */
+
+/* Mobile Header Bar */
+.mobile-top-bar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #080a14;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 90;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-bright);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.mobile-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-bright);
+}
+
+/* Tablet & Mobile Screens (<= 1024px) */
+@media (max-width: 1024px) {
+  html, body, #root, .app-container {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 16px !important;
+    padding-top: 80px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+  
+  .mobile-top-bar {
+    display: flex !important;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.85);
+    z-index: 100 !important;
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+  
+  .mobile-close-btn {
+    display: flex !important;
+  }
+  
+  .mobile-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 95;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+/* Small Screens & Phones (<= 768px) */
+@media (max-width: 768px) {
+  /* Responsive Typography */
+  h1, .page-title {
+    font-size: 1.35rem !important;
+  }
+  h2 {
+    font-size: 1.15rem !important;
+  }
+  h3 {
+    font-size: 1rem !important;
+  }
+  
+  /* Grid layouts automatically collapse to 1 column */
+  .grid-metrics {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  .top-nav {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+    margin-bottom: 16px !important;
+  }
+  
+  .system-status {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  /* Make inline flex headers wrap cleanly */
+  div[style*="display: flex"][style*="justify-content: space-between"] {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  
+  /* Tables horizontally scrollable */
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+  }
+  
+  .console {
+    max-height: 180px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .glass-panel {
+    padding: 14px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ensure all layout rows and columns collapse cleanly on mobile */
+  .hub-container,
+  .evolution-grid,
+  .two-column-row,
+  .layout-wrapper,
+  .comparative-block,
+  .research-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    gap: 16px !important;
+  }
+
+  .agents-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .memo-list-pane,
+  .viewer-pane,
+  .empty-viewer,
+  .column-card,
+  .evolution-col,
+  .filters-pane,
+  .canvas-container,
+  .comparative-item,
+  div[style*="flex: 1 1"],
+  div[style*="flex: 2 1"],
+  div[style*="flex: 3 1"] {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    max-height: none !important;
+  }
+
+  .viewer-header,
+  .console-header,
+  .card-header,
+  .score-summary-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .viewer-actions,
+  .console-filters {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+  
+  .viewer-actions button,
+  .console-filters button {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .summary-metric {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .summary-divider {
+    width: 100% !important;
+    height: 1px !important;
+    margin: 4px 0 !important;
+  }
+
+  /* Responsive Selectors & Sidebar Layouts */
+  .desktop-company-selector,
+  .desktop-saved-intel {
+    display: none !important;
+  }
+  .mobile-company-selector,
+  .mobile-saved-intel {
+    display: block !important;
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-company-selector,
+  .mobile-saved-intel {
+    display: none !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
