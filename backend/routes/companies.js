@@ -46,7 +46,11 @@ router.get('/', optionalAuth, async (req, res) => {
           name: p.name,
           status: p.status,
           marketAdoption: p.market_adoption,
-          hindsightDelta: p.hindsight_delta
+          hindsightDelta: p.hindsight_delta,
+          revenueShare: p.revenue_share,
+          rating: p.rating,
+          reviewCount: p.review_count,
+          category: p.category
         })),
         expectations: (expRes.data || []).map(e => ({
           id: e.id,
@@ -101,7 +105,11 @@ router.post('/', optionalAuth, async (req, res) => {
         name: p.name,
         status: p.status || 'active',
         market_adoption: p.marketAdoption ?? 0,
-        hindsight_delta: p.hindsightDelta ?? 0
+        hindsight_delta: p.hindsightDelta ?? 0,
+        revenue_share: p.revenueShare ?? 0,
+        rating: p.rating ?? 4.0,
+        review_count: p.reviewCount ?? 50,
+        category: p.category || `${company.sector || 'Core Industry'} (${(p.status || 'active').toUpperCase()})`
       }));
       const { error } = await db.from('company_products').upsert(rows);
       if (error) throw error;

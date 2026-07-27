@@ -251,7 +251,7 @@ export const MemoryGraphView: React.FC<MemoryGraphViewProps> = ({ nodes, edges, 
     breakdown.push(`Edge Density: ${edges.length} edges across ${nodes.length} nodes — ${edgesPerNode.toFixed(1)} links/node (${densityScore}/25 pts)`);
 
     // Metric 3: Hindsight Integration — are lessons present in graph? (25 pts)
-    const hindsightNodeCount = nodes.filter(n => n.group === 'hindsight_lesson' || (n.group as string) === 'theme').length;
+    const hindsightNodeCount = nodes.filter(n => n.group === 'hindsight_lesson' || n.group === 'theme').length;
     const hindsightIntScore = nodes.length > 0
       ? Math.min(Math.round((hindsightNodeCount / nodes.length) * 40), 25)
       : 0;
@@ -358,6 +358,7 @@ export const MemoryGraphView: React.FC<MemoryGraphViewProps> = ({ nodes, edges, 
       case 'company': return `rgba(99, 102, 241, ${opacity})`; // Indigo
       case 'product': return `rgba(168, 85, 247, ${opacity})`; // Violet
       case 'hindsight_lesson': return `rgba(245, 158, 11, ${opacity})`; // Amber
+      case 'theme': return `rgba(6, 182, 212, ${opacity})`; // Cyan
       case 'event': return `rgba(244, 63, 94, ${opacity})`; // Rose
       default: return `rgba(148, 163, 184, ${opacity})`;
     }

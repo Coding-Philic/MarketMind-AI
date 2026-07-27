@@ -14,6 +14,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Company, RevenueDataPoint, HindsightRecord } from '../types';
+import { CompanyAnalyticsCharts } from './CompanyAnalyticsCharts';
 
 interface CompanyEvolutionViewProps {
   companies: Company[];
@@ -447,6 +448,9 @@ export const CompanyEvolutionView: React.FC<CompanyEvolutionViewProps> = ({
         </div>
       </div>
 
+      {/* Advanced Interactive Bar Graphs & Pie Charts */}
+      <CompanyAnalyticsCharts company={selectedCompany} />
+
       {/* Strategic Intelligence Panel */}
       <div style={styles.dashboardGrid}>
         {/* Risks & Outlook */}
@@ -497,7 +501,7 @@ export const CompanyEvolutionView: React.FC<CompanyEvolutionViewProps> = ({
             <h4 style={styles.intelSubhead}><History size={14} color="#f43f5e" /> Past Incidents</h4>
             <div style={styles.incidentList}>
               {(selectedCompany.pastIncidents || []).length > 0 ? (
-                selectedCompany.pastIncidents.map((inc, i) => (
+                (selectedCompany.pastIncidents || []).map((inc, i) => (
                   <div key={i} style={styles.incidentItem}>
                     <div style={styles.incidentDot} />
                     <div>

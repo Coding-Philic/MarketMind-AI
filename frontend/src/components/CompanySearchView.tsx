@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Company } from '../types';
 import { researchCompany, CompanyResearchResult } from '../utils/api';
+import { CompanyAnalyticsCharts } from './CompanyAnalyticsCharts';
 
 interface CompanySearchViewProps {
   companies: Company[];
@@ -119,7 +120,7 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
         competitorDependencies: c.competitorDependencies,
         keyInsights: c.keyInsights || []
       },
-      searchSources: c.searchSources?.length > 0 ? c.searchSources : [
+      searchSources: (c.searchSources && c.searchSources.length > 0) ? c.searchSources : [
         { title: 'Saved AI Intelligence', url: '#', snippet: 'This profile was instantly loaded from your local database.' }
       ]
     });
@@ -378,6 +379,9 @@ export const CompanySearchView: React.FC<CompanySearchViewProps> = ({
               </div>
             </div>
           )}
+
+          {/* Interactive Graphical Data Visualizations (Donuts, Bar Graphs, Ratings) */}
+          <CompanyAnalyticsCharts company={result.company} />
 
           {/* New Detailed RAG Parameters */}
           <div style={styles.resultCard} className="glass-panel">

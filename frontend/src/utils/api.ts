@@ -5,7 +5,7 @@
 
 import type {
   Company, HindsightRecord, MarketEvent,
-  MemoryNode, MemoryEdge, InvestmentMemo
+  MemoryNode, MemoryEdge, InvestmentMemo, UserProfile
 } from '../types';
 import { supabase } from './supabase';
 
@@ -33,10 +33,21 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, retries = 1)
     headers['X-Supabase-Anon-Key'] = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   }
 
+  const localSessionId = typeof window !== 'undefined' ? localStorage.getItem('marketmind_session_id') : null;
+  if (localSessionId) {
+    headers['X-Session-Id'] = localSessionId;
+  }
+
   const response = await fetch(url, {
+    credentials: 'include',
     ...options,
     headers
   });
+
+  const resSessionId = response.headers.get('X-Session-Id');
+  if (resSessionId && typeof window !== 'undefined') {
+    try { localStorage.setItem('marketmind_session_id', resSessionId); } catch (e) {}
+  }
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));

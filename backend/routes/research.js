@@ -85,7 +85,7 @@ ${historicalData.join('\n')}
       financeContext,
       searchResults.answer ? `Search Summary: ${searchResults.answer}` : '',
       ...(searchResults.results || []).map((r, i) =>
-        `[Source ${i + 1}] ${r.title}\n${(r.content || '').substring(0, 1000)}...`
+        `[Source ${i + 1}] ${r.title}\n${(r.content || '').substring(0, 500)}...`
       )
     ].filter(Boolean).join('\n\n');
 
@@ -187,7 +187,7 @@ Create a structured JSON response with EXACTLY this format (no markdown, no code
     {"period": "2025", "revenue": 0, "netMargin": 0}
   ],
   "products": [
-    {"name": "Product Name", "status": "active", "marketAdoption": 50, "hindsightDelta": 0}
+    {"name": "Product Name", "status": "active", "marketAdoption": 50, "hindsightDelta": 0, "revenueShare": 30, "rating": 4.6, "reviewCount": 140, "category": "Cloud & AI"}
   ],
   "expectations": [
     {"id": "exp-1", "description": "Key strategic expectation", "targetTimeline": "Q4 2025", "metricTarget": "Metric name"}
@@ -212,12 +212,13 @@ IMPORTANT:
 - Use the 10-year historical snapshot to inform your analysis.
 - If you cannot find specific data, provide reasonable estimates based on the company's known profile.
 - 'hindsightDelta' in products MUST be a non-zero integer between -20 and +20 representing market momentum relative to expectations.
-- Maintain completely clear, professional, easy-to-understand language across all text fields (description, dependencies, growthOutlook, riskFactors, geopoliticalRisks, competitorDependencies, keyInsights, incidents) so every reader can understand it without a stock market background.
+- For each product in 'products', provide estimated 'revenueShare' (percentage of company revenue, summing to ~100%), 'rating' (out of 5.0), 'reviewCount' (number of market/analyst reviews), and 'category' (e.g., "Hardware", "Cloud & AI", "Services", "Software", or whatever specific dynamic category fits the company's actual real-world industry).
+- SENIOR INVESTOR PERSONA: Explain all findings, strategic dependencies, growth outlooks, risks, and market mechanics in clean, simple, beginner-friendly language so that anyone—even a newcomer with zero stock market background—can easily understand how the market works and what drives corporate value.
 `;
 
     const analysisText = await queryGroq(analysisPrompt, {
       model: 'openai/gpt-oss-120b',
-      maxTokens: 4000,
+      maxTokens: 2500,
       temperature: 0.2
     });
 
@@ -320,7 +321,11 @@ IMPORTANT:
               name: p.name,
               status: p.status || 'active',
               market_adoption: p.marketAdoption ?? 0,
-              hindsight_delta: p.hindsightDelta ?? 0
+              hindsight_delta: p.hindsightDelta ?? 0,
+              revenue_share: p.revenueShare ?? 0,
+              rating: p.rating ?? 4.0,
+              review_count: p.reviewCount ?? 50,
+              category: p.category || `${parsed.sector || 'Core Industry'} (${(p.status || 'active').toUpperCase()})`
             }))
           );
         }

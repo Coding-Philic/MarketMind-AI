@@ -1,6 +1,8 @@
 import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
 import { supabase } from './lib/db.js';
 import { log } from './lib/utils.js';
 
@@ -36,23 +38,46 @@ app.use(cors({
     } else {
       callback(null, true);
     }
-  }
+  },
+  credentials: true
 }));
 app.use(express.json({ limit: '2mb' }));
+app.use(cookieParser());
+
+// ---------------------------------------------------------------------------
+// Session ID & Cookie Middleware
+// ---------------------------------------------------------------------------
+app.use((req, res, next) => {
+  let sessionId = req.cookies?.sessionId || req.headers['x-session-id'];
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+  }
+  req.sessionId = sessionId;
+  // Set cookie with 30-day expiration
+  res.cookie('sessionId', sessionId, {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  });
+  // Also attach to response headers so client can inspect and store it if needed
+  res.setHeader('X-Session-Id', sessionId);
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // System Status & Health Check
 // ---------------------------------------------------------------------------
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), supabase: !!supabase });
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), supabase: !!supabase, sessionId: req.sessionId, hasCookie: !!req.cookies?.sessionId });
 });
 
-app.get('/api/config', (_req, res) => {
+app.get('/api/config', (req, res) => {
   const hasApiKey = !!(process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim().length > 0);
   const hasSearch = !!(process.env.TAVILY_API_KEY && process.env.TAVILY_API_KEY.trim().length > 0);
   const hasDatabase = !!supabase;
-  log('Request /api/config', { hasApiKey, hasSearch, hasDatabase });
-  res.json({ hasApiKey, hasSearch, hasDatabase });
+  log('Request /api/config', { hasApiKey, hasSearch, hasDatabase, sessionId: req.sessionId });
+  res.json({ hasApiKey, hasSearch, hasDatabase, sessionId: req.sessionId });
 });
 
 // ---------------------------------------------------------------------------

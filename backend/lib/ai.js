@@ -30,6 +30,10 @@ export async function generateEmbedding(text) {
 import { fetchWithTimeout } from './utils.js';
 import { log } from './utils.js';
 
+export const defaultSystemPrompt = `You are a Senior Institutional Investment Analyst, Chief Market Strategist, and Team Lead with over 15 years of stock market, portfolio management, and corporate evolution experience. Your mission is to analyze companies, financial trajectories, risk factors, and product ecosystems with institutional precision and deep market intuition.
+CRITICAL RULE: You MUST explain your findings, financial mechanics, strategic dependencies, and market insights in clean, simple, beginner-friendly language so that anyone—even a complete newcomer with zero investing or stock market background—can easily understand how the market works and what drives the company's value. Avoid unexplained financial jargon; simplify complex concepts using clear analogies and straightforward terms.
+DYNAMIC ATTRIBUTION RULE: Always ensure every sector, product category, rating, and financial metric is dynamically derived from real-world data and financial reality. NEVER use generic placeholders or hardcoded assumptions.`;
+
 export async function queryGroq(prompt, options = {}) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
@@ -40,39 +44,59 @@ export async function queryGroq(prompt, options = {}) {
   const maxTokens = options.maxTokens || 2048;
   const temperature = options.temperature ?? 0.3;
 
-  log('Groq Request', { model, promptLength: prompt.length });
-
-  const response = await fetchWithTimeout(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: maxTokens,
-        temperature,
-        top_p: 0.9,
-        stream: false
-      })
-    }
-  );
-
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    const message = errorJson?.error?.message || `HTTP ${response.status} Error`;
-    throw new Error(`Groq API Error (${model}): ${message}`);
+  const modelsToTry = [model];
+  if (model === 'openai/gpt-oss-120b') {
+    modelsToTry.push('llama-3.3-70b-versatile', 'llama-3.1-8b-instant');
   }
 
-  const data = await response.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error('Groq API returned empty content');
+  let lastError = null;
+  for (const currentModel of modelsToTry) {
+    try {
+      log('Groq Request', { model: currentModel, promptLength: prompt.length });
+      const response = await fetchWithTimeout(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: [
+              { role: 'system', content: options.system || defaultSystemPrompt },
+              { role: 'user', content: prompt }
+            ],
+            max_tokens: maxTokens,
+            temperature,
+            top_p: 0.9,
+            stream: false
+          })
+        }
+      );
 
-  log('Groq Response', { model, responseLength: text.length });
-  return text.trim();
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({}));
+        const message = errorJson?.error?.message || `HTTP ${response.status} Error`;
+        throw new Error(`Groq API Error (${currentModel}): ${message}`);
+      }
+
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (!text) throw new Error('Groq API returned empty content');
+
+      log('Groq Response', { model: currentModel, responseLength: text.length });
+      return text.trim();
+    } catch (err) {
+      lastError = err;
+      console.warn(`[Server] Model ${currentModel} failed: ${err.message}. ${modelsToTry.indexOf(currentModel) < modelsToTry.length - 1 ? 'Trying fallback...' : ''}`);
+      if (modelsToTry.indexOf(currentModel) < modelsToTry.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 // ---------------------------------------------------------------------------

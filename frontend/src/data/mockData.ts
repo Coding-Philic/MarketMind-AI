@@ -15,10 +15,10 @@ export const initialCompanies: Company[] = [
       { period: 'Q1 2026', revenue: 26044, netMargin: 57.1 }
     ],
     products: [
-      { name: 'H100 GPU (Hopper)', status: 'active', marketAdoption: 98, hindsightDelta: 15 },
-      { name: 'Blackwell GPU (B200)', status: 'beta', marketAdoption: 75, hindsightDelta: -10 },
-      { name: 'CUDA Platform', status: 'active', marketAdoption: 95, hindsightDelta: 5 },
-      { name: 'DGX Cloud', status: 'active', marketAdoption: 45, hindsightDelta: -20 }
+      { name: 'H100 GPU (Hopper)', status: 'active', marketAdoption: 98, hindsightDelta: 15, revenueShare: 52, rating: 4.9, reviewCount: 340, category: 'AI Hardware / Accelerators' },
+      { name: 'Blackwell GPU (B200)', status: 'beta', marketAdoption: 75, hindsightDelta: -10, revenueShare: 28, rating: 4.7, reviewCount: 210, category: 'AI Hardware / Accelerators' },
+      { name: 'CUDA Platform', status: 'active', marketAdoption: 95, hindsightDelta: 5, revenueShare: 12, rating: 4.8, reviewCount: 290, category: 'Software Infrastructure' },
+      { name: 'DGX Cloud', status: 'active', marketAdoption: 45, hindsightDelta: -20, revenueShare: 8, rating: 4.2, reviewCount: 115, category: 'Enterprise Cloud & Services' }
     ],
     expectations: [
       { id: 'nvda-exp-1', description: 'Blackwell GPU shipping in high volume by Q4 2024', targetTimeline: 'Q4 2024', metricTarget: 'Gross Margin > 75%' },
@@ -30,20 +30,20 @@ export const initialCompanies: Company[] = [
     id: 'aapl',
     name: 'Apple Inc.',
     ticker: 'AAPL',
-    description: 'Premium consumer electronics giant expanding into spatial computing, services, and local on-device AI.',
-    sector: 'Consumer Tech',
-    alignmentScore: 62,
+    description: 'Consumer electronics, software, and online services giant focusing on ecosystem lock-in and services expansion.',
+    sector: 'Consumer Electronics & Services',
+    alignmentScore: 72,
     revenueData: [
       { period: '2023', revenue: 383285, netMargin: 25.3 },
-      { period: '2024', revenue: 391035, netMargin: 25.8 },
-      { period: '2025', revenue: 412500, netMargin: 26.5 },
+      { period: '2024', revenue: 391035, netMargin: 26.1 },
+      { period: '2025', revenue: 410500, netMargin: 27.5 },
       { period: 'Q1 2026', revenue: 119575, netMargin: 28.2 }
     ],
     products: [
-      { name: 'iPhone Series', status: 'active', marketAdoption: 92, hindsightDelta: 2 },
-      { name: 'Apple Vision Pro', status: 'active', marketAdoption: 25, hindsightDelta: -65 },
-      { name: 'Apple Intelligence', status: 'beta', marketAdoption: 58, hindsightDelta: -15 },
-      { name: 'Apple Services (Music, iCloud, Pay)', status: 'active', marketAdoption: 85, hindsightDelta: 12 }
+      { name: 'iPhone Series', status: 'active', marketAdoption: 92, hindsightDelta: 2, revenueShare: 52, rating: 4.8, reviewCount: 520, category: 'Core Hardware / Flagship' },
+      { name: 'Apple Vision Pro', status: 'active', marketAdoption: 25, hindsightDelta: -65, revenueShare: 3, rating: 3.9, reviewCount: 180, category: 'Spatial Computing / New Tech' },
+      { name: 'Apple Intelligence', status: 'beta', marketAdoption: 58, hindsightDelta: -15, revenueShare: 10, rating: 4.3, reviewCount: 240, category: 'Software Infrastructure' },
+      { name: 'Apple Services (Music, iCloud, Pay)', status: 'active', marketAdoption: 85, hindsightDelta: 12, revenueShare: 35, rating: 4.7, reviewCount: 410, category: 'Enterprise Cloud & Services' }
     ],
     expectations: [
       { id: 'aapl-exp-1', description: 'Apple Vision Pro selling 1,000,000 units in year one', targetTimeline: 'Q1 2025', metricTarget: 'Unit Sales' },

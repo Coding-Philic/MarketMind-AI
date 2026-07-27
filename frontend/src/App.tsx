@@ -35,7 +35,8 @@ import {
   saveMemoryEdges,
   saveMemo,
   seedDatabase,
-  fetchUserProfile
+  fetchUserProfile,
+  saveUserProfile
 } from './utils/api';
 import { subscribeToTables } from './utils/supabase';
 

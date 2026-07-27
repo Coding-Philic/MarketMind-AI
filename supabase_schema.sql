@@ -61,6 +61,10 @@ CREATE TABLE company_products (
   status TEXT DEFAULT 'active',
   market_adoption INTEGER DEFAULT 0,
   hindsight_delta INTEGER DEFAULT 0,
+  revenue_share NUMERIC DEFAULT 0,
+  rating NUMERIC DEFAULT 4.0,
+  review_count INTEGER DEFAULT 50,
+  category TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
